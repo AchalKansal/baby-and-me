@@ -192,8 +192,8 @@ function showPeek() {
   e.faceWrap.classList.remove('hidden'); e.faceWrap.classList.add('shown');
   e.hands.style.display = ''; e.eyesClosed.style.display = ''; e.eyesOpen.style.display = 'none';
   e.mouthNormal.style.display = ''; e.mouthBoo.style.display = 'none';
-  playPeek();
   autoTimer = setTimeout(showBoo, 1800);
+  try { playPeek(); } catch(err) {}
 }
 
 function showBoo() {
@@ -203,9 +203,8 @@ function showBoo() {
   e.bigText.textContent = 'BOO! 🎉'; e.subText.textContent = 'Tap to play again!';
   e.hands.style.display = 'none'; e.eyesClosed.style.display = 'none'; e.eyesOpen.style.display = '';
   e.mouthNormal.style.display = 'none'; e.mouthBoo.style.display = '';
-  playBoo();
-  setTimeout(playGiggle, 350);
-  autoTimer = setTimeout(showHide, 3000); // ← loops back to hide, then peek, then BOO...
+  autoTimer = setTimeout(showHide, 3000);
+  try { playBoo(); setTimeout(playGiggle, 350); } catch(err) {}
 }
 
 // Tap anywhere skips to the next phase
