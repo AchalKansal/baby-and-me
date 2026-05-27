@@ -155,48 +155,64 @@ function playGiggle() {
   }
 }
 
-function nextPhase() {
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function els() {
+  return {
+    curtain:     document.getElementById('curtain'),
+    faceWrap:    document.getElementById('face-wrap'),
+    bigText:     document.getElementById('big-text'),
+    subText:     document.getElementById('sub-text'),
+    hands:       document.getElementById('hands'),
+    eyesClosed:  document.getElementById('eyes-closed'),
+    eyesOpen:    document.getElementById('eyes-open'),
+    mouthNormal: document.getElementById('mouth-normal'),
+    mouthBoo:    document.getElementById('mouth-boo'),
+  };
+}
+
+// ── Four named phases — each one schedules the next directly ─────────────────
+function showHide() {
   clearTimeout(autoTimer);
-  phase = (phase + 1) % 4;
+  phase = 0;
+  const e = els();
+  e.bigText.textContent = ''; e.subText.textContent = 'Tap to play!';
+  e.curtain.classList.remove('open'); e.curtain.classList.add('closed');
+  e.faceWrap.classList.remove('shown'); e.faceWrap.classList.add('hidden');
+  e.hands.style.display = ''; e.eyesClosed.style.display = ''; e.eyesOpen.style.display = 'none';
+  e.mouthNormal.style.display = ''; e.mouthBoo.style.display = 'none';
+  autoTimer = setTimeout(showPeek, 1200);
+}
 
-  const curtain = document.getElementById('curtain');
-  const faceWrap = document.getElementById('face-wrap');
-  const bigText = document.getElementById('big-text');
-  const subText = document.getElementById('sub-text');
-  const handsEl = document.getElementById('hands');
-  const eyesClosed = document.getElementById('eyes-closed');
-  const eyesOpen = document.getElementById('eyes-open');
-  const mouthNormal = document.getElementById('mouth-normal');
-  const mouthBoo = document.getElementById('mouth-boo');
+function showPeek() {
+  clearTimeout(autoTimer);
+  phase = 1;
+  const e = els();
+  e.bigText.textContent = 'Peek...'; e.subText.textContent = 'Where am I? 👀';
+  e.curtain.classList.remove('closed'); e.curtain.classList.add('open');
+  e.faceWrap.classList.remove('hidden'); e.faceWrap.classList.add('shown');
+  e.hands.style.display = ''; e.eyesClosed.style.display = ''; e.eyesOpen.style.display = 'none';
+  e.mouthNormal.style.display = ''; e.mouthBoo.style.display = 'none';
+  playPeek();
+  autoTimer = setTimeout(showBoo, 1800);
+}
 
-  if (phase === 1) {
-    // Peek: curtain opens a little, face appears with hands
-    bigText.textContent = 'Peek...'; subText.textContent = 'Where am I? 👀';
-    curtain.classList.remove('closed'); curtain.classList.add('open');
-    faceWrap.classList.remove('hidden'); faceWrap.classList.add('shown');
-    handsEl.style.display = ''; eyesClosed.style.display = ''; eyesOpen.style.display = 'none';
-    mouthNormal.style.display = ''; mouthBoo.style.display = 'none';
-    playPeek();
-    autoTimer = setTimeout(nextPhase, 1800);
-  } else if (phase === 2) {
-    // BOO!
-    bigText.textContent = 'BOO! 🎉'; subText.textContent = 'Tap for another round!';
-    handsEl.style.display = 'none'; eyesClosed.style.display = 'none'; eyesOpen.style.display = '';
-    mouthNormal.style.display = 'none'; mouthBoo.style.display = '';
-    playBoo();
-    setTimeout(playGiggle, 350);
-    autoTimer = setTimeout(nextPhase, 3000);
-  } else if (phase === 3) {
-    // Hide
-    bigText.textContent = 'Peek...'; subText.textContent = '';
-    curtain.classList.remove('open'); curtain.classList.add('closed');
-    faceWrap.classList.remove('shown'); faceWrap.classList.add('hidden');
-    handsEl.style.display = ''; eyesClosed.style.display = ''; eyesOpen.style.display = 'none';
-    mouthNormal.style.display = ''; mouthBoo.style.display = 'none';
-    autoTimer = setTimeout(nextPhase, 1500);
-  } else {
-    phase = 1; nextPhase(); return;
-  }
+function showBoo() {
+  clearTimeout(autoTimer);
+  phase = 2;
+  const e = els();
+  e.bigText.textContent = 'BOO! 🎉'; e.subText.textContent = 'Tap to play again!';
+  e.hands.style.display = 'none'; e.eyesClosed.style.display = 'none'; e.eyesOpen.style.display = '';
+  e.mouthNormal.style.display = 'none'; e.mouthBoo.style.display = '';
+  playBoo();
+  setTimeout(playGiggle, 350);
+  autoTimer = setTimeout(showHide, 3000); // ← loops back to hide, then peek, then BOO...
+}
+
+// Tap anywhere skips to the next phase
+function nextPhase() {
+  if (phase === 0)      showPeek();
+  else if (phase === 1) showBoo();
+  else                  showHide();
 }
 
 // Stars
@@ -210,8 +226,8 @@ function addStars() {
 }
 addStars();
 
-// Auto start after 2s
-autoTimer = setTimeout(() => { phase = 0; nextPhase(); }, 2000);
+// Auto-start after 2s
+autoTimer = setTimeout(showPeek, 2000);
 </script>
 </body>
 </html>
