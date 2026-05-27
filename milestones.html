@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milestones · Baby & Me</title>
+<style>
+  :root { --pp: #FF7B54; --pl: #FFE8DF; --bg: #FFF9F5; --text: #3D3D3D; --muted: #999; --white: #fff; --shadow: 0 4px 24px rgba(0,0,0,0.09); --radius: 18px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px; }
+
+  .dob-card { background: var(--white); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
+  .dob-card label { font-size: 0.82rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+  .dob-card input { flex: 1; border: 1px solid #e8e0d8; border-radius: 10px; padding: 9px 12px; font-size: 0.88rem; font-family: inherit; background: var(--bg); outline: none; }
+  .dob-card input:focus { border-color: var(--pp); }
+  #baby-age { font-size: 0.8rem; color: var(--pp); font-weight: 700; white-space: nowrap; }
+
+  .progress-bar { background: #f0e8e0; border-radius: 20px; height: 8px; margin-bottom: 20px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--pp), #ffb347); border-radius: 20px; transition: width 0.5s; }
+
+  .month-section { margin-bottom: 18px; }
+  .month-header {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    background: var(--white); border-radius: 14px; padding: 12px 16px;
+    box-shadow: var(--shadow); margin-bottom: 2px;
+  }
+  .month-header .m-label { font-weight: 700; font-size: 0.9rem; flex: 1; }
+  .month-header .m-count { font-size: 0.75rem; color: var(--muted); }
+  .month-header .m-arrow { font-size: 0.8rem; color: var(--muted); transition: transform 0.2s; }
+  .month-header.open .m-arrow { transform: rotate(90deg); }
+  .month-header .m-dot { width: 10px; height: 10px; border-radius: 50%; background: #e8e0d8; flex-shrink: 0; }
+  .month-header.current .m-dot { background: var(--pp); box-shadow: 0 0 0 3px var(--pl); }
+  .month-header.done .m-dot { background: #4CAF50; }
+
+  .milestones { display: none; background: var(--white); border-radius: 0 0 14px 14px; padding: 4px 16px 12px; margin-top: -4px; box-shadow: var(--shadow); }
+  .milestones.open { display: block; }
+
+  .mitem { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5ede6; }
+  .mitem:last-child { border-bottom: none; }
+  .mitem input[type=checkbox] { margin-top: 2px; width: 18px; height: 18px; accent-color: var(--pp); cursor: pointer; flex-shrink: 0; }
+  .mitem label { font-size: 0.84rem; line-height: 1.45; cursor: pointer; }
+  .mitem.done label { text-decoration: line-through; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>⭐ Milestones</h2>
+</div>
+<div class="wrap">
+  <div class="dob-card">
+    <label>Baby's DOB</label>
+    <input type="date" id="dob" onchange="onDobChange()">
+    <span id="baby-age"></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+  <div id="months"></div>
+</div>
+<script>
+const MILESTONES = [
+  { month: 0, label: 'Newborn (0–1 mo)', items: [
+    'Responds to loud sounds', 'Eyes focus 8–12 inches away', 'Brings hands near face',
+    'Head turns toward voices', 'Cries to communicate needs', 'Sleeps 16–17 hrs/day'
+  ]},
+  { month: 1, label: '1 Month', items: [
+    'Lifts head briefly when on tummy', 'Follows objects with eyes', 'Recognises parent\'s voice',
+    'First social smiles begin', 'Smoother arm/leg movements', 'Coos softly'
+  ]},
+  { month: 2, label: '2 Months', items: [
+    'Holds head up at 45° on tummy', 'Smiles at familiar faces', 'Coos and makes gurgling sounds',
+    'Tracks moving objects', 'Opens and shuts hands', 'Brings hands to mouth'
+  ]},
+  { month: 3, label: '3 Months', items: [
+    'Holds head steady when held upright', 'Laughs and squeals', 'Reaches for dangling objects',
+    'Recognises own face in mirror', 'Bears weight on legs when supported', 'Sleeps 5–6 hr stretches'
+  ]},
+  { month: 4, label: '4 Months', items: [
+    'Rolls from tummy to back', 'Pushes up on straight arms (tummy time)', 'Babbles with expression',
+    'Grabs and holds objects', 'Laughs out loud', 'Shows curiosity about surroundings'
+  ]},
+  { month: 5, label: '5 Months', items: [
+    'Rolls both ways', 'Sits with support', 'Passes objects hand to hand',
+    'Responds to own name', 'Blows raspberries', 'Distinguishes strangers from family'
+  ]},
+  { month: 6, label: '6 Months', items: [
+    'Sits without support briefly', 'Begins solids (check with doctor)', 'Babbles consonants (ba, da)',
+    'Turns toward sounds', 'Enjoys social play', 'Explores objects by mouthing'
+  ]},
+  { month: 7, label: '7 Months', items: [
+    'Sits independently', 'Crawling attempts (commando crawl)', 'Bangs objects together',
+    'Looks for fallen objects', 'Shows stranger anxiety', 'Pincer grasp developing'
+  ]},
+  { month: 8, label: '8 Months', items: [
+    'Crawls on hands and knees', 'Pulls to standing', 'Pincer grasp (finger + thumb)',
+    'Says "mama" / "dada" (non-specific)', 'Plays peek-a-boo', 'Object permanence established'
+  ]},
+  { month: 9, label: '9 Months', items: [
+    'Stands holding furniture', 'Cruises along furniture', 'Uses index finger to point',
+    'Waves bye-bye', 'Imitates sounds and gestures', 'Separation anxiety peaks'
+  ]},
+  { month: 10, label: '10 Months', items: [
+    'Stands briefly alone', 'Takes first steps (varies)', 'Puts objects into containers',
+    'Uses "mama"/"dada" specifically', 'Responds to simple commands', 'Claps hands'
+  ]},
+  { month: 11, label: '11 Months', items: [
+    'Walks with one hand held', 'Says 1–2 words besides mama/dada', 'Shakes head for "no"',
+    'Scribbles with crayon', 'Drinks from sippy cup', 'Shows clear preferences'
+  ]},
+  { month: 12, label: '12 Months', items: [
+    'May walk independently', 'Says 2–4 words', 'Understands simple instructions',
+    'Stacks 2 blocks', 'Uses cup and spoon with help', 'Points to show interest'
+  ]}
+];
+
+const KEY = 'milestones_v1';
+let checks = {}, dob = null, currentMonth = -1;
+
+function load() {
+  try { const s = localStorage.getItem(KEY); if (s) { const d = JSON.parse(s); checks = d.checks || {}; dob = d.dob || null; } } catch(e){}
+  if (dob) { document.getElementById('dob').value = dob; calcAge(); }
+  render();
+}
+
+function onDobChange() {
+  dob = document.getElementById('dob').value;
+  localStorage.setItem(KEY, JSON.stringify({ checks, dob }));
+  calcAge();
+  render();
+}
+
+function calcAge() {
+  if (!dob) return;
+  const birth = new Date(dob), now = new Date();
+  const months = (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth();
+  currentMonth = Math.max(0, Math.min(12, months));
+  document.getElementById('baby-age').textContent = months < 1 ? 'Newborn' : `${months} mo`;
+}
+
+function render() {
+  const total = MILESTONES.reduce((a, m) => a + m.items.length, 0);
+  const done = Object.values(checks).filter(Boolean).length;
+  document.getElementById('progress').style.width = `${(done / total * 100).toFixed(1)}%`;
+
+  const container = document.getElementById('months');
+  container.innerHTML = '';
+  MILESTONES.forEach((ms, idx) => {
+    const mDone = ms.items.filter((_, i) => checks[`${idx}_${i}`]).length;
+    const allDone = mDone === ms.items.length;
+    const isCurrent = idx === currentMonth;
+    const isOpen = isCurrent || idx === 0;
+
+    const sec = document.createElement('div');
+    sec.className = 'month-section';
+
+    const hdr = document.createElement('div');
+    hdr.className = `month-header${allDone ? ' done' : ''}${isCurrent ? ' current' : ''}${isOpen ? ' open' : ''}`;
+    hdr.innerHTML = `<span class="m-dot"></span><span class="m-label">${ms.label}</span><span class="m-count">${mDone}/${ms.items.length}</span><span class="m-arrow">›</span>`;
+    hdr.onclick = () => { hdr.classList.toggle('open'); list.classList.toggle('open'); };
+
+    const list = document.createElement('div');
+    list.className = `milestones${isOpen ? ' open' : ''}`;
+    ms.items.forEach((item, i) => {
+      const key = `${idx}_${i}`;
+      const div = document.createElement('div');
+      div.className = `mitem${checks[key] ? ' done' : ''}`;
+      div.innerHTML = `<input type="checkbox" id="${key}" ${checks[key] ? 'checked' : ''}><label for="${key}">${item}</label>`;
+      div.querySelector('input').addEventListener('change', e => {
+        checks[key] = e.target.checked;
+        div.classList.toggle('done', e.target.checked);
+        localStorage.setItem(KEY, JSON.stringify({ checks, dob }));
+        const cnt = ms.items.filter((_, j) => checks[`${idx}_${j}`]).length;
+        hdr.querySelector('.m-count').textContent = `${cnt}/${ms.items.length}`;
+        const newDone = Object.values(checks).filter(Boolean).length;
+        document.getElementById('progress').style.width = `${(newDone / total * 100).toFixed(1)}%`;
+      });
+      list.appendChild(div);
+    });
+
+    sec.appendChild(hdr); sec.appendChild(list);
+    container.appendChild(sec);
+  });
+}
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubbles · Baby & Me</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(160deg, #0D1B4B 0%, #1A3A6B 50%, #0D2B5E 100%); min-height: 100vh; overflow: hidden; position: relative; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; position: relative; z-index: 10; }
+  .back { text-decoration: none; color: rgba(255,255,255,0.7); font-size: 1.2rem; background: rgba(255,255,255,0.12); border-radius: 8px; padding: 4px 10px; }
+  .topbar h2 { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+  #canvas { position: fixed; inset: 0; }
+
+  .controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 10; }
+  .ctrl-btn { padding: 10px 18px; border-radius: 24px; border: 2px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: inherit; backdrop-filter: blur(6px); transition: all 0.2s; }
+  .ctrl-btn:active { transform: scale(0.95); }
+  .ctrl-btn.active { background: rgba(255,255,255,0.28); border-color: rgba(255,255,255,0.5); }
+
+  .hint { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.35); font-size: 0.75rem; pointer-events: none; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>🫧 Bubbles</h2>
+  <div style="width:44px"></div>
+</div>
+<canvas id="canvas"></canvas>
+<p class="hint">Tap anywhere to pop!</p>
+<div class="controls">
+  <button class="ctrl-btn active" onclick="setMode('float',this)">🌙 Float</button>
+  <button class="ctrl-btn" onclick="setMode('burst',this)">✨ Burst</button>
+  <button class="ctrl-btn" onclick="setMode('rain',this)">🌧️ Rain</button>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, bubbles = [], mode = 'float', animId;
+
+const COLORS = [
+  'rgba(255,182,193,0.55)', 'rgba(173,216,230,0.55)', 'rgba(144,238,144,0.55)',
+  'rgba(255,218,185,0.55)', 'rgba(221,160,221,0.55)', 'rgba(135,206,250,0.55)',
+  'rgba(255,255,150,0.45)', 'rgba(200,230,255,0.5)'
+];
+
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+class Bubble {
+  constructor(x, y, r) {
+    this.x = x ?? Math.random() * W;
+    this.y = y ?? H + 60;
+    this.r = r ?? 20 + Math.random() * 60;
+    this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    this.speed = (0.4 + Math.random() * 0.6) * (mode === 'rain' ? -1 : 1);
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.015 + Math.random() * 0.02;
+    this.opacity = 0; this.fadingIn = true;
+    this.popping = false; this.popR = 0; this.popAlpha = 1;
+  }
+  update() {
+    if (this.popping) { this.popR += 3; this.popAlpha -= 0.07; return; }
+    this.y += mode === 'rain' ? Math.abs(this.speed) * 1.2 : -this.speed;
+    this.x += Math.sin(this.wobble) * 0.7;
+    this.wobble += this.wobbleSpeed;
+    if (this.fadingIn) { this.opacity = Math.min(1, this.opacity + 0.025); if (this.opacity >= 1) this.fadingIn = false; }
+    if (mode === 'rain') { if (this.y > H + this.r * 2) { this.y = -this.r; this.x = Math.random() * W; } }
+    else { if (this.y < -this.r * 2) { this.y = H + this.r; this.x = Math.random() * W; } }
+  }
+  draw() {
+    if (this.popping) {
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.popR, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(255,255,255,${this.popAlpha * 0.6})`; ctx.lineWidth = 2; ctx.stroke();
+      return;
+    }
+    ctx.save(); ctx.globalAlpha = this.opacity * 0.85;
+    const grad = ctx.createRadialGradient(this.x - this.r*0.3, this.y - this.r*0.3, this.r*0.1, this.x, this.y, this.r);
+    grad.addColorStop(0, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(0.4, this.color);
+    grad.addColorStop(1, 'rgba(255,255,255,0.05)');
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+    // shine
+    ctx.beginPath(); ctx.arc(this.x - this.r*0.3, this.y - this.r*0.35, this.r*0.2, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
+    ctx.restore();
+  }
+  pop() { this.popping = true; }
+  get dead() { return this.popping && this.popAlpha <= 0; }
+}
+
+function spawnBubbles(n) {
+  const start = mode === 'rain' ? 0 : H;
+  for (let i = 0; i < n; i++) {
+    const b = new Bubble(Math.random()*W, mode==='rain' ? Math.random()*H : start + Math.random()*200);
+    b.opacity = Math.random(); b.fadingIn = false;
+    bubbles.push(b);
+  }
+}
+
+function setMode(m, btn) {
+  mode = m; bubbles = [];
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  spawnBubbles(m === 'burst' ? 8 : 18);
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  bubbles = bubbles.filter(b => !b.dead);
+
+  if (mode === 'burst' && bubbles.filter(b=>!b.popping).length < 6) {
+    for(let i=0;i<3;i++) { const b=new Bubble(Math.random()*W, H+40); b.r=15+Math.random()*45; bubbles.push(b); }
+  } else if (bubbles.length < 20) {
+    const b = new Bubble();
+    if (mode === 'rain') { b.y = -b.r; }
+    bubbles.push(b);
+  }
+
+  bubbles.forEach(b => { b.update(); b.draw(); });
+  animId = requestAnimationFrame(loop);
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  let popped = false;
+  bubbles.forEach(b => {
+    if (!b.popping && Math.hypot(b.x-mx, b.y-my) < b.r) { b.pop(); popped = true; }
+  });
+  if (!popped && mode === 'burst') {
+    for(let i=0;i<5;i++) { const b=new Bubble(mx+(-30+Math.random()*60), my+(-30+Math.random()*60), 15+Math.random()*30); bubbles.push(b); }
+  }
+});
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t => {
+    const rect=canvas.getBoundingClientRect();
+    const mx=t.clientX-rect.left, my=t.clientY-rect.top;
+    bubbles.forEach(b => { if(!b.popping && Math.hypot(b.x-mx,b.y-my)<b.r) b.pop(); });
+  });
+}, {passive:false});
+
+window.addEventListener('resize', resize);
+resize();
+spawnBubbles(18);
+loop();
+</script>
+</body>
+</html>

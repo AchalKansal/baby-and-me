@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards · Baby & Me</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000; color: #fff; min-height: 100vh; overflow: hidden; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(0,0,0,0.8); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
+  .back { text-decoration: none; color: #fff; font-size: 1.2rem; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 4px 10px; }
+  .topbar h2 { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+  .topbar-right { display: flex; gap: 8px; align-items: center; }
+  #auto-btn { background: rgba(255,255,255,0.15); border: none; color: white; font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-family: inherit; }
+  #auto-btn.on { background: rgba(255,255,255,0.35); }
+
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  svg { max-width: min(100vw, 100vh); max-height: min(100vw, 100vh); width: 100%; height: 100%; }
+
+  .label { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); padding: 6px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; backdrop-filter: blur(4px); white-space: nowrap; }
+  .dots { position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+  .dot.active { background: white; }
+
+  .fade { animation: fadeIn 0.6s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>◼◻ High Contrast Cards</h2>
+  <div class="topbar-right">
+    <button id="auto-btn" onclick="toggleAuto()">Auto ▶</button>
+  </div>
+</div>
+
+<div id="stage" onclick="nextCard()"></div>
+<div class="dots" id="dots"></div>
+<div class="label" id="label"></div>
+
+<script>
+const CARDS = [
+  {
+    name: 'Checkerboard',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      ${Array.from({length:8}, (_,r) => Array.from({length:8}, (_,c) =>
+        `<rect x="${c*50}" y="${r*50}" width="50" height="50" fill="${(r+c)%2===0?'#000':'#fff'}"/>`
+      ).join('')).join('')}
+    </svg>`
+  },
+  {
+    name: 'Bulls-Eye',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      ${[180,150,120,90,60,30,10].map((r,i)=>`<circle cx="200" cy="200" r="${r}" fill="${i%2===0?'#000':'#fff'}"/>`).join('')}
+    </svg>`
+  },
+  {
+    name: 'Stripes',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      ${Array.from({length:10}, (_,i)=>`<rect x="${i*40}" y="0" width="20" height="400" fill="#000"/>`).join('')}
+    </svg>`
+  },
+  {
+    name: 'Spiral',
+    render: () => {
+      let path = '';
+      for (let i = 0; i < 720; i++) {
+        const angle = (i * Math.PI) / 180;
+        const r = i * 0.25;
+        const x = 200 + r * Math.cos(angle);
+        const y = 200 + r * Math.sin(angle);
+        path += i === 0 ? `M${x},${y}` : `L${x},${y}`;
+      }
+      return `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <rect width="400" height="400" fill="#fff"/>
+        <path d="${path}" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"/>
+      </svg>`;
+    }
+  },
+  {
+    name: 'Baby Face',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <circle cx="200" cy="200" r="160" fill="#000"/>
+      <circle cx="200" cy="200" r="140" fill="#fff"/>
+      <circle cx="150" cy="170" r="28" fill="#000"/>
+      <circle cx="250" cy="170" r="28" fill="#000"/>
+      <circle cx="158" cy="163" r="9" fill="#fff"/>
+      <circle cx="258" cy="163" r="9" fill="#fff"/>
+      <path d="M 145 240 Q 200 285 255 240" fill="none" stroke="#000" stroke-width="12" stroke-linecap="round"/>
+      <circle cx="200" cy="145" r="6" fill="#000"/>
+      <rect x="185" y="118" width="30" height="14" rx="7" fill="#000"/>
+    </svg>`
+  },
+  {
+    name: 'Triangles',
+    render: () => {
+      const tris = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const x = c * 100, y = r * 100;
+          const fill = (r + c) % 2 === 0 ? '#000' : '#fff';
+          const stroke = (r + c) % 2 === 0 ? '#fff' : '#000';
+          tris.push(`<polygon points="${x},${y} ${x+100},${y} ${x+50},${y+100}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`);
+          tris.push(`<polygon points="${x},${y+100} ${x+100},${y+100} ${x+50},${y}" fill="${stroke}" stroke="${fill}" stroke-width="2"/>`);
+        }
+      }
+      return `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">${tris.join('')}</svg>`;
+    }
+  },
+  {
+    name: 'Star',
+    render: () => {
+      const pts = Array.from({length:10}, (_,i) => {
+        const r = i%2===0 ? 160 : 70;
+        const a = (i * 36 - 90) * Math.PI / 180;
+        return `${200 + r*Math.cos(a)},${200 + r*Math.sin(a)}`;
+      }).join(' ');
+      return `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <rect width="400" height="400" fill="#fff"/>
+        <polygon points="${pts}" fill="#000"/>
+      </svg>`;
+    }
+  },
+  {
+    name: 'Radial',
+    render: () => {
+      const slices = [];
+      for (let i = 0; i < 16; i++) {
+        const a1 = (i * 22.5 - 90) * Math.PI / 180;
+        const a2 = ((i+1) * 22.5 - 90) * Math.PI / 180;
+        const x1 = 200 + 190*Math.cos(a1), y1 = 200 + 190*Math.sin(a1);
+        const x2 = 200 + 190*Math.cos(a2), y2 = 200 + 190*Math.sin(a2);
+        slices.push(`<path d="M200,200 L${x1},${y1} A190,190 0 0,1 ${x2},${y2} Z" fill="${i%2===0?'#000':'#fff'}"/>`);
+      }
+      return `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <rect width="400" height="400" fill="#fff"/>
+        ${slices.join('')}
+        <circle cx="200" cy="200" r="30" fill="#fff"/>
+      </svg>`;
+    }
+  }
+];
+
+let current = 0, autoPlay = false, autoTimer = null;
+
+function renderDots() {
+  document.getElementById('dots').innerHTML = CARDS.map((_,i) =>
+    `<div class="dot${i===current?' active':''}"></div>`).join('');
+}
+
+function showCard(i) {
+  current = ((i % CARDS.length) + CARDS.length) % CARDS.length;
+  const stage = document.getElementById('stage');
+  stage.innerHTML = CARDS[current].render();
+  stage.classList.remove('fade');
+  void stage.offsetWidth;
+  stage.classList.add('fade');
+  document.getElementById('label').textContent = CARDS[current].name;
+  renderDots();
+}
+
+function nextCard() { showCard(current + 1); }
+
+function toggleAuto() {
+  autoPlay = !autoPlay;
+  const btn = document.getElementById('auto-btn');
+  btn.textContent = autoPlay ? 'Auto ⏸' : 'Auto ▶';
+  btn.classList.toggle('on', autoPlay);
+  clearInterval(autoTimer);
+  if (autoPlay) autoTimer = setInterval(nextCard, 4000);
+}
+
+showCard(0);
+</script>
+</body>
+</html>

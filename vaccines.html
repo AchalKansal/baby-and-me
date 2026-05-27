@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vaccines · Baby & Me</title>
+<style>
+  :root { --pp: #FF7B54; --pl: #FFE8DF; --bg: #FFF9F5; --text: #3D3D3D; --muted: #999; --white: #fff; --shadow: 0 4px 24px rgba(0,0,0,0.09); --radius: 18px; --green: #4CAF50; --amber: #FFC107; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px; }
+
+  .dob-card { background: var(--white); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .dob-card label { font-size: 0.82rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 8px; }
+  .dob-row { display: flex; gap: 10px; align-items: center; }
+  .dob-card input { flex: 1; border: 1px solid #e8e0d8; border-radius: 10px; padding: 9px 12px; font-size: 0.88rem; font-family: inherit; background: var(--bg); outline: none; }
+  .dob-card input:focus { border-color: var(--pp); }
+  #cur-age { font-size: 0.8rem; font-weight: 700; color: var(--pp); white-space: nowrap; }
+
+  .next-up { background: linear-gradient(135deg, var(--pp), #ff9a7b); color: white; border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px; }
+  .next-up .nu-label { font-size: 0.75rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .next-up .nu-date { font-size: 1.4rem; font-weight: 800; }
+  .next-up .nu-vax { font-size: 0.82rem; opacity: 0.9; margin-top: 4px; }
+
+  .disclaimer { background: #FFF3CD; border-radius: 12px; padding: 12px 14px; font-size: 0.78rem; color: #7a5c00; line-height: 1.5; margin-bottom: 20px; }
+  .disclaimer strong { display: block; margin-bottom: 2px; }
+
+  .vax-card { background: var(--white); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow); display: flex; gap: 14px; align-items: flex-start; }
+  .vax-check { margin-top: 2px; flex-shrink: 0; }
+  .vax-check input { width: 20px; height: 20px; accent-color: var(--green); cursor: pointer; }
+  .vax-info { flex: 1; }
+  .vax-info .v-title { font-weight: 700; font-size: 0.92rem; margin-bottom: 4px; }
+  .vax-info .v-date { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; }
+  .v-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .v-tag { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--pl); color: var(--pp); }
+  .v-tag.done { background: #E8F5E9; color: var(--green); }
+  .v-tag.upcoming { background: #FFF3CD; color: #e65100; }
+  .v-tag.overdue { background: #FFEBEE; color: #c62828; }
+  .vax-card.done-card { opacity: 0.65; }
+  .vax-card.upcoming-card { border-left: 4px solid var(--amber); }
+  .vax-card.overdue-card { border-left: 4px solid #e53935; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>💉 Vaccines</h2>
+</div>
+<div class="wrap">
+  <div class="dob-card">
+    <label>Baby's Date of Birth</label>
+    <div class="dob-row">
+      <input type="date" id="dob" onchange="onDob()">
+      <span id="cur-age"></span>
+    </div>
+  </div>
+  <div id="next-up"></div>
+  <div class="disclaimer">
+    <strong>⚠️ Note</strong>
+    Schedule shown follows IAP (Indian) / WHO guidelines for 0–12 months. Always confirm with your pediatrician — timings may vary by country and doctor's advice.
+  </div>
+  <div id="vax-list"></div>
+</div>
+<script>
+const SCHEDULE = [
+  { at: 0,  label: 'At Birth',    vaccines: ['BCG', 'OPV-0 (Oral Polio)', 'Hepatitis B – Dose 1'] },
+  { at: 6,  label: '6 Weeks',     vaccines: ['DTwP/DTaP – Dose 1', 'IPV – Dose 1', 'Hib – Dose 1', 'Hepatitis B – Dose 2', 'PCV – Dose 1', 'Rotavirus – Dose 1'] },
+  { at: 10, label: '10 Weeks',    vaccines: ['DTwP/DTaP – Dose 2', 'IPV – Dose 2', 'Hib – Dose 2', 'PCV – Dose 2', 'Rotavirus – Dose 2'] },
+  { at: 14, label: '14 Weeks',    vaccines: ['DTwP/DTaP – Dose 3', 'IPV – Dose 3', 'Hib – Dose 3', 'PCV – Dose 3', 'Rotavirus – Dose 3', 'OPV – Dose 1'] },
+  { at: 24, label: '6 Months',    vaccines: ['Hepatitis B – Dose 3', 'OPV – Dose 2', 'Influenza – Dose 1'] },
+  { at: 36, label: '9 Months',    vaccines: ['MMR – Dose 1', 'Typhoid conjugate – Dose 1'] },
+  { at: 52, label: '12 Months',   vaccines: ['Hepatitis A – Dose 1', 'Varicella – Dose 1'] }
+];
+
+const KEY = 'vaccines_v1';
+let dob = null, checks = {};
+
+function load() {
+  try { const s = localStorage.getItem(KEY); if (s) { const d = JSON.parse(s); dob = d.dob; checks = d.checks || {}; } } catch(e){}
+  if (dob) { document.getElementById('dob').value = dob; render(); calcAge(); }
+}
+
+function onDob() {
+  dob = document.getElementById('dob').value;
+  calcAge(); render();
+  localStorage.setItem(KEY, JSON.stringify({ dob, checks }));
+}
+
+function calcAge() {
+  if (!dob) return;
+  const birth = new Date(dob), now = new Date();
+  const weeks = Math.floor((now - birth) / 604800000);
+  const months = Math.floor(weeks / 4.33);
+  document.getElementById('cur-age').textContent = weeks < 8 ? `${weeks} wks` : `${months} mo`;
+}
+
+function addWeeks(date, w) { const d = new Date(date); d.setDate(d.getDate() + w * 7); return d; }
+function fmt(date) { return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
+
+function render() {
+  const list = document.getElementById('vax-list');
+  const nextUpEl = document.getElementById('next-up');
+  list.innerHTML = ''; nextUpEl.innerHTML = '';
+  if (!dob) { list.innerHTML = '<p style="color:var(--muted);text-align:center;font-size:0.85rem;padding:20px">Enter baby\'s birth date above</p>'; return; }
+
+  const birth = new Date(dob), now = new Date();
+  let nextItem = null;
+
+  SCHEDULE.forEach((slot, si) => {
+    const due = addWeeks(birth, slot.at);
+    const isPast = due < now;
+    const isToday = due.toDateString() === now.toDateString();
+    const weeksAway = Math.round((due - now) / 604800000);
+    const key = `slot_${si}`;
+    if (!checks[key]) checks[key] = false;
+
+    let status = 'upcoming';
+    if (checks[key]) status = 'done';
+    else if (isPast && !isToday) status = 'overdue';
+    else if (!isPast || isToday) status = 'upcoming';
+
+    if (!checks[key] && (status === 'upcoming' || status === 'overdue') && !nextItem) nextItem = { slot, due, status };
+
+    const card = document.createElement('div');
+    card.className = `vax-card ${status}-card`;
+
+    let dateStr = fmt(due);
+    if (isToday) dateStr = 'Today';
+    else if (weeksAway === 1) dateStr = 'Next week · ' + fmt(due);
+    else if (weeksAway > 0 && weeksAway <= 4) dateStr = `In ${weeksAway} wks · ` + fmt(due);
+
+    card.innerHTML = `
+      <div class="vax-check"><input type="checkbox" id="${key}" ${checks[key]?'checked':''} onchange="toggleCheck('${key}')"></div>
+      <div class="vax-info">
+        <div class="v-title">${slot.label}</div>
+        <div class="v-date">📅 ${dateStr}</div>
+        <div class="v-tags">
+          ${slot.vaccines.map(v => `<span class="v-tag ${status}">${v}</span>`).join('')}
+        </div>
+      </div>`;
+    if (checks[key]) card.classList.add('done-card');
+    list.appendChild(card);
+  });
+
+  if (nextItem) {
+    const weeksAway = Math.round((nextItem.due - now) / 604800000);
+    const daysAway = Math.round((nextItem.due - now) / 86400000);
+    let when = daysAway === 0 ? 'Today!' : daysAway < 0 ? `${Math.abs(daysAway)} days overdue` : daysAway < 7 ? `In ${daysAway} days` : `In ${weeksAway} weeks`;
+    nextUpEl.innerHTML = `<div class="next-up">
+      <div class="nu-label">${nextItem.status === 'overdue' ? '⚠️ Overdue' : '⏭ Next up'}</div>
+      <div class="nu-date">${slot_label(nextItem)} — ${when}</div>
+      <div class="nu-vax">${nextItem.slot.vaccines.slice(0,3).join(' · ')}${nextItem.slot.vaccines.length > 3 ? ' +more' : ''}</div>
+    </div>`;
+  }
+}
+
+function slot_label(item) { return fmt(item.due); }
+
+function toggleCheck(key) {
+  checks[key] = document.getElementById(key).checked;
+  localStorage.setItem(KEY, JSON.stringify({ dob, checks }));
+  render();
+}
+load();
+</script>
+</body>
+</html>

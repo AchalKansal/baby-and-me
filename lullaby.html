@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lullaby · Baby & Me</title>
+<style>
+  :root { --bp: #5BB8B0; --bl: #DCF2F0; --bg: #F0FAF9; --text: #2D4A48; --muted: #7AA8A5; --white: #fff; --shadow: 0 4px 24px rgba(91,184,176,0.15); --radius: 18px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--bp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px; }
+
+  .now-playing { text-align: center; padding: 28px 20px 16px; }
+  .song-name { font-size: 1.3rem; font-weight: 800; color: var(--bp); min-height: 36px; transition: opacity 0.3s; }
+  .song-sub { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+  /* Breathing visual */
+  .breath-wrap { display: flex; justify-content: center; margin: 10px 0 24px; }
+  #breath-ring {
+    width: 140px; height: 140px; border-radius: 50%;
+    background: radial-gradient(circle, var(--bl) 40%, var(--bp) 100%);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.8s ease-in-out;
+    box-shadow: 0 0 0 0 rgba(91,184,176,0.4);
+  }
+  #breath-ring.playing { animation: breathe 3s ease-in-out infinite; }
+  @keyframes breathe {
+    0%,100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(91,184,176,0.4); }
+    50%{ transform:scale(1.18); box-shadow:0 0 0 20px rgba(91,184,176,0); }
+  }
+  #play-btn { font-size: 2.2rem; background: none; border: none; cursor: pointer; line-height: 1; }
+
+  .songs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .song-btn {
+    background: var(--white); border: 2px solid transparent; border-radius: var(--radius);
+    padding: 14px; text-align: left; cursor: pointer; box-shadow: var(--shadow);
+    transition: all 0.15s; font-family: inherit;
+  }
+  .song-btn .sb-icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+  .song-btn .sb-name { font-size: 0.82rem; font-weight: 700; color: var(--text); display: block; }
+  .song-btn .sb-dur { font-size: 0.7rem; color: var(--muted); }
+  .song-btn.active { border-color: var(--bp); background: var(--bl); }
+  .song-btn:active { transform: scale(0.97); }
+
+  .ctrl-row { background: var(--white); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
+  .ctrl-row label { font-size: 0.78rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 8px; }
+  input[type=range] { width: 100%; accent-color: var(--bp); }
+  .tempo-row { display: flex; gap: 8px; margin-top: 12px; }
+  .tempo-btn { flex: 1; padding: 7px 4px; border-radius: 10px; border: 2px solid #d0eeec; background: var(--white); font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: inherit; color: var(--muted); transition: all 0.15s; }
+  .tempo-btn.active { border-color: var(--bp); background: var(--bl); color: var(--bp); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>🎵 Lullaby</h2>
+</div>
+<div class="wrap">
+  <div class="now-playing">
+    <div class="song-name" id="song-name">Choose a lullaby</div>
+    <div class="song-sub" id="song-sub">Tap a song below, then press play</div>
+  </div>
+  <div class="breath-wrap">
+    <div id="breath-ring">
+      <button id="play-btn" onclick="togglePlay()">▶</button>
+    </div>
+  </div>
+  <div class="songs" id="songs"></div>
+  <div class="ctrl-row">
+    <label>Volume</label>
+    <input type="range" id="vol" min="0" max="100" value="55" oninput="setVol(this.value)">
+    <div class="tempo-row">
+      <button class="tempo-btn active" onclick="setTempo(0.7,this)">🐢 Slow</button>
+      <button class="tempo-btn" onclick="setTempo(1,this)">Normal</button>
+      <button class="tempo-btn" onclick="setTempo(1.3,this)">🐇 Fast</button>
+    </div>
+  </div>
+</div>
+<script>
+const SONGS = [
+  { icon:'🌟', name:'Twinkle Twinkle', notes:[
+    [261,4],[261,4],[392,4],[392,4],[440,4],[440,4],[392,2],
+    [349,4],[349,4],[330,4],[330,4],[294,4],[294,4],[261,2],
+    [392,4],[392,4],[349,4],[349,4],[330,4],[330,4],[294,2],
+    [392,4],[392,4],[349,4],[349,4],[330,4],[330,4],[294,2],
+    [261,4],[261,4],[392,4],[392,4],[440,4],[440,4],[392,2],
+    [349,4],[349,4],[330,4],[330,4],[294,4],[294,4],[261,2]
+  ]},
+  { icon:'🌙', name:'Brahms Lullaby', notes:[
+    [196,3],[247,3],[294,6],[247,3],[294,3],[349,6],
+    [294,3],[330,3],[392,4],[370,2],[392,3],[440,3],[494,6],
+    [247,3],[294,3],[330,6],[294,3],[330,3],[392,6],
+    [349,3],[392,3],[440,4],[392,2],[294,3],[330,3],[294,6]
+  ]},
+  { icon:'🚢', name:'Row Your Boat', notes:[
+    [261,3],[261,3],[261,2],[294,2],[330,6],
+    [330,2],[294,2],[330,2],[349,2],[392,6],
+    [523,2],[523,2],[523,2],[392,2],[392,2],[392,2],[330,2],[330,2],[330,2],[261,2],[261,2],[261,2],
+    [392,2],[349,2],[330,2],[294,2],[261,6]
+  ]},
+  { icon:'⭐', name:'Mary Had a Lamb', notes:[
+    [330,4],[294,4],[261,4],[294,4],[330,4],[330,4],[330,2],
+    [294,4],[294,4],[294,2],[330,4],[392,4],[392,2],
+    [330,4],[294,4],[261,4],[294,4],[330,4],[330,4],[330,4],[330,4],
+    [294,4],[294,4],[330,4],[294,4],[261,2]
+  ]},
+  { icon:'🎶', name:'Hush Little Baby', notes:[
+    [330,4],[294,4],[330,4],[349,4],[330,4],[294,4],[261,2],
+    [261,4],[261,4],[294,4],[330,4],[294,4],[261,4],[294,2],
+    [294,4],[330,4],[349,4],[392,4],[349,4],[330,4],[294,2],
+    [330,4],[294,4],[261,4],[294,4],[330,4],[261,4],[261,2]
+  ]},
+  { icon:'🌈', name:'Gentle Dream', notes:[
+    [261,6],[294,4],[330,8],
+    [349,6],[330,4],[294,8],
+    [261,6],[294,4],[349,4],[330,8],
+    [294,6],[261,4],[220,8],
+    [261,6],[294,4],[330,4],[349,4],[392,4],[349,8]
+  ]}
+];
+
+let ctx = null, gainNode = null;
+let playing = false, stopped = false, currentSong = null, tempo = 0.7;
+let scheduleTimeout = null;
+
+function ensureCtx() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); gainNode = ctx.createGain(); gainNode.connect(ctx.destination); gainNode.gain.value = 0.55; }
+}
+
+function playNote(freq, dur, startTime) {
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const env = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  osc.connect(env); env.connect(gainNode);
+  const noteDur = (dur / 8) * tempo;
+  env.gain.setValueAtTime(0, startTime);
+  env.gain.linearRampToValueAtTime(0.8, startTime + 0.02);
+  env.gain.setValueAtTime(0.8, startTime + noteDur * 0.7);
+  env.gain.linearRampToValueAtTime(0, startTime + noteDur);
+  osc.start(startTime); osc.stop(startTime + noteDur + 0.01);
+}
+
+function playLoop() {
+  if (!playing || !currentSong) return;
+  const notes = SONGS[currentSong].notes;
+  let t = ctx.currentTime;
+  notes.forEach(([freq, dur]) => { playNote(freq, dur, t); t += (dur / 8) * tempo; });
+  scheduleTimeout = setTimeout(playLoop, (t - ctx.currentTime) * 1000 - 200);
+}
+
+function togglePlay() {
+  if (!currentSong && currentSong !== 0) { selectSong(0); return; }
+  playing = !playing;
+  if (playing) {
+    ensureCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    playLoop();
+  } else {
+    clearTimeout(scheduleTimeout);
+  }
+  document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
+  document.getElementById('breath-ring').classList.toggle('playing', playing);
+}
+
+function selectSong(i) {
+  clearTimeout(scheduleTimeout);
+  currentSong = i;
+  document.querySelectorAll('.song-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+  document.getElementById('song-name').textContent = SONGS[i].name;
+  document.getElementById('song-sub').textContent = 'Press play ▶ to start';
+  if (playing) { ensureCtx(); playLoop(); }
+}
+
+function setVol(v) { if (gainNode) gainNode.gain.value = v / 100; }
+
+function setTempo(t, btn) {
+  tempo = t;
+  document.querySelectorAll('.tempo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+const songsEl = document.getElementById('songs');
+SONGS.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.className = 'song-btn';
+  b.innerHTML = `<span class="sb-icon">${s.icon}</span><span class="sb-name">${s.name}</span><span class="sb-dur">Loops</span>`;
+  b.onclick = () => selectSong(i);
+  songsEl.appendChild(b);
+});
+</script>
+</body>
+</html>

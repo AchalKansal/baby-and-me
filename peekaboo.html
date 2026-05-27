@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peek-a-Boo · Baby & Me</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; overflow: hidden; background: #1a1a2e; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; position: relative; z-index: 20; }
+  .back { text-decoration: none; color: rgba(255,255,255,0.7); font-size: 1.2rem; background: rgba(255,255,255,0.12); border-radius: 8px; padding: 4px 10px; }
+  .topbar h2 { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+  #stage { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
+
+  /* Face */
+  #face-wrap { position: relative; z-index: 5; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  #face-wrap.hidden { transform: scale(0) rotate(-15deg); }
+  #face-wrap.shown { transform: scale(1) rotate(0deg); }
+  .face-svg { width: min(260px,60vw); height: min(260px,60vw); filter: drop-shadow(0 8px 32px rgba(0,0,0,0.5)); }
+
+  /* Curtain */
+  #curtain { position: fixed; inset: 0; z-index: 10; pointer-events: none; display: flex; }
+  .panel { flex: 1; transition: transform 0.5s cubic-bezier(0.4,0,0.2,1); background: linear-gradient(to bottom, #4a90d9, #2d5a8e); }
+  #curtain.closed .panel-l { transform: translateX(0); }
+  #curtain.closed .panel-r { transform: translateX(0); }
+  #curtain.open .panel-l { transform: translateX(-100%); }
+  #curtain.open .panel-r { transform: translateX(100%); }
+  /* curtain texture */
+  .panel::after { content: ''; display: block; width: 100%; height: 100%; background: repeating-linear-gradient(to right, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 18px); }
+  .panel::before { content: ''; display: block; position: absolute; top: 0; width: 100%; height: 8px; background: #1e3a5f; }
+
+  /* Big text */
+  #text-overlay { position: fixed; bottom: 15%; left: 50%; transform: translateX(-50%); z-index: 15; text-align: center; pointer-events: none; }
+  #big-text { font-size: clamp(2rem, 10vw, 4rem); font-weight: 900; color: white; text-shadow: 0 4px 20px rgba(0,0,0,0.5); letter-spacing: -1px; transition: opacity 0.3s; min-height: 1em; }
+  #sub-text { font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-top: 8px; }
+
+  /* Stars */
+  .star { position: fixed; border-radius: 50%; pointer-events: none; animation: twinkle linear infinite; }
+  @keyframes twinkle { 0%,100%{opacity:0.3} 50%{opacity:1} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>👀 Peek-a-Boo</h2>
+  <div style="width:44px"></div>
+</div>
+
+<div id="curtain" class="closed">
+  <div class="panel panel-l"></div>
+  <div class="panel panel-r"></div>
+</div>
+
+<div id="stage" onclick="nextPhase()">
+  <div id="face-wrap" class="hidden">
+    <svg class="face-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" id="face-svg">
+      <!-- Head -->
+      <circle cx="100" cy="100" r="90" fill="#FFD700"/>
+      <circle cx="100" cy="100" r="86" fill="#FFE44D"/>
+      <!-- Eyes (closed = peeping, open = BOO) -->
+      <g id="eyes-closed">
+        <ellipse cx="68" cy="90" rx="16" ry="10" fill="#3D2B1F"/>
+        <ellipse cx="132" cy="90" rx="16" ry="10" fill="#3D2B1F"/>
+        <path d="M 54 88 Q 68 80 82 88" fill="none" stroke="#3D2B1F" stroke-width="3" stroke-linecap="round"/>
+        <path d="M 118 88 Q 132 80 146 88" fill="none" stroke="#3D2B1F" stroke-width="3" stroke-linecap="round"/>
+      </g>
+      <g id="eyes-open" style="display:none">
+        <circle cx="68" cy="90" r="18" fill="white"/>
+        <circle cx="132" cy="90" r="18" fill="white"/>
+        <circle cx="68" cy="90" r="10" fill="#3D2B1F"/>
+        <circle cx="132" cy="90" r="10" fill="#3D2B1F"/>
+        <circle cx="72" cy="85" r="4" fill="white"/>
+        <circle cx="136" cy="85" r="4" fill="white"/>
+      </g>
+      <!-- Nose -->
+      <ellipse cx="100" cy="110" rx="8" ry="5" fill="#FFC200"/>
+      <!-- Mouth -->
+      <g id="mouth-normal">
+        <path d="M 75 130 Q 100 148 125 130" fill="#FF6B6B" stroke="#3D2B1F" stroke-width="2"/>
+      </g>
+      <g id="mouth-boo" style="display:none">
+        <ellipse cx="100" cy="138" rx="22" ry="16" fill="#3D2B1F"/>
+        <ellipse cx="100" cy="132" rx="20" ry="8" fill="#FF6B6B"/>
+      </g>
+      <!-- Cheeks -->
+      <circle cx="45" cy="118" r="14" fill="rgba(255,100,100,0.25)"/>
+      <circle cx="155" cy="118" r="14" fill="rgba(255,100,100,0.25)"/>
+      <!-- Hands covering -->
+      <g id="hands">
+        <ellipse cx="52" cy="100" rx="28" ry="38" fill="#FFD700" stroke="#FFC200" stroke-width="2"/>
+        <ellipse cx="148" cy="100" rx="28" ry="38" fill="#FFD700" stroke="#FFC200" stroke-width="2"/>
+        <!-- fingers -->
+        <rect x="28" y="66" width="10" height="20" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="40" y="60" width="10" height="22" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="52" y="58" width="10" height="22" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="64" y="60" width="10" height="22" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="112" y="60" width="10" height="22" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="124" y="58" width="10" height="22" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="136" y="60" width="10" height="22" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+        <rect x="148" y="66" width="10" height="20" rx="5" fill="#FFD700" stroke="#FFC200" stroke-width="1.5"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<div id="text-overlay">
+  <div id="big-text">Tap to Play!</div>
+  <div id="sub-text">Tap the screen</div>
+</div>
+
+<script>
+// Phases: 0=intro, 1=peek(curtain peeking), 2=BOO!, 3=hide
+let phase = 0, autoTimer = null, ctx_audio = null;
+
+function ensureAudio() { if (!ctx_audio) ctx_audio = new (window.AudioContext || window.webkitAudioContext)(); }
+
+function playPeek() {
+  ensureAudio();
+  const osc = ctx_audio.createOscillator(), g = ctx_audio.createGain();
+  osc.type = 'sine'; osc.frequency.setValueAtTime(400, ctx_audio.currentTime);
+  osc.frequency.linearRampToValueAtTime(600, ctx_audio.currentTime + 0.15);
+  g.gain.setValueAtTime(0.3, ctx_audio.currentTime);
+  g.gain.linearRampToValueAtTime(0, ctx_audio.currentTime + 0.25);
+  osc.connect(g); g.connect(ctx_audio.destination);
+  osc.start(); osc.stop(ctx_audio.currentTime + 0.3);
+}
+
+function playBoo() {
+  ensureAudio();
+  const t = ctx_audio.currentTime;
+  [523, 659, 784].forEach((f, i) => {
+    const osc = ctx_audio.createOscillator(), g = ctx_audio.createGain();
+    osc.type = 'triangle'; osc.frequency.value = f;
+    g.gain.setValueAtTime(0.35, t + i*0.08);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i*0.08 + 0.3);
+    osc.connect(g); g.connect(ctx_audio.destination);
+    osc.start(t + i*0.08); osc.stop(t + i*0.08 + 0.35);
+  });
+}
+
+function playGiggle() {
+  ensureAudio();
+  const t = ctx_audio.currentTime;
+  for (let i = 0; i < 4; i++) {
+    const osc = ctx_audio.createOscillator(), g = ctx_audio.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(700 + Math.random()*200, t + i*0.12);
+    osc.frequency.linearRampToValueAtTime(600, t + i*0.12 + 0.1);
+    g.gain.setValueAtTime(0.25, t + i*0.12);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i*0.12 + 0.1);
+    osc.connect(g); g.connect(ctx_audio.destination);
+    osc.start(t + i*0.12); osc.stop(t + i*0.12 + 0.15);
+  }
+}
+
+function nextPhase() {
+  clearTimeout(autoTimer);
+  phase = (phase + 1) % 4;
+
+  const curtain = document.getElementById('curtain');
+  const faceWrap = document.getElementById('face-wrap');
+  const bigText = document.getElementById('big-text');
+  const subText = document.getElementById('sub-text');
+  const handsEl = document.getElementById('hands');
+  const eyesClosed = document.getElementById('eyes-closed');
+  const eyesOpen = document.getElementById('eyes-open');
+  const mouthNormal = document.getElementById('mouth-normal');
+  const mouthBoo = document.getElementById('mouth-boo');
+
+  if (phase === 1) {
+    // Peek: curtain opens a little, face appears with hands
+    bigText.textContent = 'Peek...'; subText.textContent = 'Where am I? 👀';
+    curtain.classList.remove('closed'); curtain.classList.add('open');
+    faceWrap.classList.remove('hidden'); faceWrap.classList.add('shown');
+    handsEl.style.display = ''; eyesClosed.style.display = ''; eyesOpen.style.display = 'none';
+    mouthNormal.style.display = ''; mouthBoo.style.display = 'none';
+    playPeek();
+    autoTimer = setTimeout(nextPhase, 1800);
+  } else if (phase === 2) {
+    // BOO!
+    bigText.textContent = 'BOO! 🎉'; subText.textContent = 'Tap for another round!';
+    handsEl.style.display = 'none'; eyesClosed.style.display = 'none'; eyesOpen.style.display = '';
+    mouthNormal.style.display = 'none'; mouthBoo.style.display = '';
+    playBoo();
+    setTimeout(playGiggle, 350);
+    autoTimer = setTimeout(nextPhase, 3000);
+  } else if (phase === 3) {
+    // Hide
+    bigText.textContent = 'Peek...'; subText.textContent = '';
+    curtain.classList.remove('open'); curtain.classList.add('closed');
+    faceWrap.classList.remove('shown'); faceWrap.classList.add('hidden');
+    handsEl.style.display = ''; eyesClosed.style.display = ''; eyesOpen.style.display = 'none';
+    mouthNormal.style.display = ''; mouthBoo.style.display = 'none';
+    autoTimer = setTimeout(nextPhase, 1500);
+  } else {
+    phase = 1; nextPhase(); return;
+  }
+}
+
+// Stars
+function addStars() {
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div'); s.className = 'star';
+    const size = 1 + Math.random() * 3;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;background:rgba(255,255,255,${0.4+Math.random()*0.6});animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
+    document.body.appendChild(s);
+  }
+}
+addStars();
+
+// Auto start after 2s
+autoTimer = setTimeout(() => { phase = 0; nextPhase(); }, 2000);
+</script>
+</body>
+</html>

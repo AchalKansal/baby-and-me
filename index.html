@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby & Me</title>
+<style>
+  :root {
+    --bg: #FFF9F5;
+    --pp: #FF7B54;
+    --pl: #FFE8DF;
+    --bp: #5BB8B0;
+    --bl: #DCF2F0;
+    --text: #3D3D3D;
+    --muted: #999;
+    --white: #fff;
+    --shadow: 0 4px 24px rgba(0,0,0,0.09);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, var(--pp), #ff9a7b);
+    color: white;
+    text-align: center;
+    padding: 36px 20px 28px;
+  }
+  header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+  header p { margin-top: 6px; font-size: 0.95rem; opacity: 0.9; }
+
+  .section { padding: 28px 20px 8px; max-width: 600px; margin: 0 auto; }
+  .section-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin-bottom: 16px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #e8e0d8; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-bottom: 10px; }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    border: none;
+  }
+  .card:active { transform: scale(0.97); }
+  .card .icon { font-size: 2rem; line-height: 1; }
+  .card .name { font-size: 0.88rem; font-weight: 700; line-height: 1.3; }
+  .card .desc { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+  .card.parent { border-top: 4px solid var(--pp); }
+  .card.baby   { border-top: 4px solid var(--bp); }
+  .card.parent:hover { box-shadow: 0 6px 28px rgba(255,123,84,0.18); }
+  .card.baby:hover   { box-shadow: 0 6px 28px rgba(91,184,176,0.18); }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    padding: 2px 8px; border-radius: 20px; margin-bottom: 2px;
+  }
+  .tag.p { background: var(--pl); color: var(--pp); }
+  .tag.b { background: var(--bl); color: var(--bp); }
+
+  footer { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 0.75rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Baby & Me</h1>
+  <p>Your offline companion for the first year</p>
+</header>
+
+<div class="section">
+  <div class="section-label">For You — Parent Tools</div>
+  <div class="grid">
+    <a href="white-noise.html" class="card parent">
+      <div class="icon">🌧️</div>
+      <span class="tag p">Parent</span>
+      <div class="name">White Noise</div>
+      <div class="desc">Rain, womb, fan & more</div>
+    </a>
+    <a href="feed-tracker.html" class="card parent">
+      <div class="icon">🍼</div>
+      <span class="tag p">Parent</span>
+      <div class="name">Feed Tracker</div>
+      <div class="desc">Log feeds + set alarm</div>
+    </a>
+    <a href="milestones.html" class="card parent">
+      <div class="icon">⭐</div>
+      <span class="tag p">Parent</span>
+      <div class="name">Milestones</div>
+      <div class="desc">Month-by-month checklist</div>
+    </a>
+    <a href="cry-guide.html" class="card parent">
+      <div class="icon">😢</div>
+      <span class="tag p">Parent</span>
+      <div class="name">Cry Guide</div>
+      <div class="desc">Decode what baby needs</div>
+    </a>
+    <a href="vaccines.html" class="card parent">
+      <div class="icon">💉</div>
+      <span class="tag p">Parent</span>
+      <div class="name">Vaccines</div>
+      <div class="desc">Schedule by birth date</div>
+    </a>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-label">For Baby — Sensory &amp; Play</div>
+  <div class="grid">
+    <a href="flashcards.html" class="card baby">
+      <div class="icon">◼◻</div>
+      <span class="tag b">Baby</span>
+      <div class="name">Flashcards</div>
+      <div class="desc">High contrast B&amp;W patterns</div>
+    </a>
+    <a href="lullaby.html" class="card baby">
+      <div class="icon">🎵</div>
+      <span class="tag b">Baby</span>
+      <div class="name">Lullaby</div>
+      <div class="desc">Gentle melodies to sleep</div>
+    </a>
+    <a href="bubbles.html" class="card baby">
+      <div class="icon">🫧</div>
+      <span class="tag b">Baby</span>
+      <div class="name">Bubbles</div>
+      <div class="desc">Soft floating bubbles</div>
+    </a>
+    <a href="peekaboo.html" class="card baby">
+      <div class="icon">👀</div>
+      <span class="tag b">Baby</span>
+      <div class="name">Peek-a-Boo</div>
+      <div class="desc">Tap to reveal the face</div>
+    </a>
+    <a href="mirror.html" class="card baby">
+      <div class="icon">🪞</div>
+      <span class="tag b">Baby</span>
+      <div class="name">Mirror</div>
+      <div class="desc">Front camera for baby</div>
+    </a>
+  </div>
+</div>
+
+<footer>Fully offline · No ads · No data collected</footer>
+
+</body>
+</html>

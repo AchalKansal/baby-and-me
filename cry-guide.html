@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cry Guide · Baby & Me</title>
+<style>
+  :root { --pp: #FF7B54; --pl: #FFE8DF; --bg: #FFF9F5; --text: #3D3D3D; --muted: #999; --white: #fff; --shadow: 0 4px 24px rgba(0,0,0,0.09); --radius: 18px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px; }
+
+  .intro { background: var(--pl); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-size: 0.84rem; line-height: 1.6; color: #7a4035; }
+  .intro strong { display: block; margin-bottom: 4px; font-size: 0.9rem; }
+
+  .cry-card { background: var(--white); border-radius: var(--radius); padding: 0; margin-bottom: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .cry-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; }
+  .cry-header .c-icon { font-size: 1.8rem; flex-shrink: 0; }
+  .cry-header .c-title { font-weight: 700; font-size: 0.95rem; flex: 1; }
+  .cry-header .c-arrow { color: var(--muted); transition: transform 0.2s; }
+  .cry-header.open .c-arrow { transform: rotate(90deg); }
+  .cry-header { border-left: 5px solid var(--pp); }
+
+  .cry-body { display: none; padding: 0 18px 16px; }
+  .cry-body.open { display: block; }
+
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: var(--pl); color: var(--pp); }
+
+  .section-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 10px 0 6px; }
+  ul.clues { list-style: none; }
+  ul.clues li { font-size: 0.83rem; line-height: 1.5; padding: 3px 0 3px 16px; position: relative; }
+  ul.clues li::before { content: '•'; position: absolute; left: 0; color: var(--pp); font-weight: 700; }
+
+  .fix-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  .fix { background: var(--bg); border-radius: 10px; padding: 8px 10px; font-size: 0.78rem; font-weight: 600; text-align: center; }
+
+  .warn { background: #FFF3CD; border-radius: 10px; padding: 10px 12px; font-size: 0.8rem; color: #7a5c00; margin-top: 10px; line-height: 1.5; }
+  .warn strong { display: block; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>😢 Cry Guide</h2>
+</div>
+<div class="wrap">
+  <div class="intro">
+    <strong>Decode your baby's cry</strong>
+    Babies can't talk — crying is their only language. Each type has subtle differences. Tap each card to learn the clues and what to try.
+  </div>
+  <div id="cards"></div>
+</div>
+<script>
+const CRIES = [
+  {
+    icon: '🍼', title: 'Hunger', color: '#FF7B54',
+    tags: ['Most common', 'Any age', '1.5–3 hr cycles'],
+    sound: 'Rhythmic, low-pitched, repetitive "neh neh" sound. Builds gradually.',
+    clues: ['Rooting reflex (turning head, open mouth)', 'Sucking on hands/fingers', 'Last feed was 1.5–3 hrs ago', 'Gets more intense if ignored', 'Calms immediately when offered breast/bottle'],
+    fixes: ['🤱 Breastfeed', '🍼 Offer bottle', '🤚 Check hunger cues first', '⏰ Check feed log'],
+    warn: null
+  },
+  {
+    icon: '😴', title: 'Tired / Overtired', color: '#9C7BFF',
+    tags: ['Very common', 'Peaks 4–6 wks', 'Evening fussiness'],
+    sound: 'Whiny, nasal "owh" sound. Often rubbing eyes. May escalate to full meltdown.',
+    clues: ['Yawning (early sign)', 'Rubbing eyes or ears', 'Glazed expression', 'Arching back', 'Fussier than usual in evening ("witching hour")'],
+    fixes: ['🤗 Swaddle tightly', '🚗 Gentle motion (rock, stroller)', '🌧️ White noise', '🌑 Dim the lights'],
+    warn: null
+  },
+  {
+    icon: '💩', title: 'Uncomfortable / Wind', color: '#FFA726',
+    tags: ['0–3 months common', 'After feeds', 'Colic overlap'],
+    sound: 'Sharp, high-pitched. Sudden onset. Baby pulls knees up. May grunt.',
+    clues: ['Legs pulling toward tummy', 'Hard/bloated belly', 'Just finished feeding', 'Face goes red', 'Arching and writhing'],
+    fixes: ['🤸 Bicycle legs', '💆 Tummy massage (clockwise)', '🫗 Burp upright', '🤱 Check latch if breastfeeding'],
+    warn: null
+  },
+  {
+    icon: '🤗', title: 'Needs Comfort / Held', color: '#4DB6AC',
+    tags: ['4 wks+', 'Totally normal', 'Attachment phase'],
+    sound: 'Intermittent, whimpery. Stops when picked up. Starts again when put down.',
+    clues: ['Stops crying the moment you pick up', 'Calm when held, cries when put down', 'Recently had a feed/diaper change', 'Making eye contact while crying', 'Arms reaching upward'],
+    fixes: ['🤱 Skin-to-skin contact', '👶 Baby carrier/sling', '🗣️ Talk softly near ear', '🎵 Sing or hum'],
+    warn: null
+  },
+  {
+    icon: '🤒', title: 'Pain / Illness', color: '#E53935',
+    tags: ['Urgent attention', 'Any age', 'Seek advice if unsure'],
+    sound: 'Sudden, high-pitched, urgent scream. Hard to console. Very different from usual cry.',
+    clues: ['Unusual pitch — noticeably higher', 'Inconsolable despite all attempts', 'Fever (temp above 38°C / 100.4°F)', 'Not feeding or very reduced', 'Pulling at one ear repeatedly'],
+    fixes: ['🌡️ Check temperature', '🏥 Call doctor if inconsolable', '💊 Check if due for vaccines', '👁️ Check for hair tourniquet on fingers/toes'],
+    warn: { text: 'High-pitched, inconsolable cry with fever, rash, or lethargy — seek medical attention immediately.' }
+  },
+  {
+    icon: '😵', title: 'Overstimulated / Overwhelmed', color: '#7986CB',
+    tags: ['Common 6 wks+', 'Evening peak', 'Busy environments'],
+    sound: 'Fretful, turns away from stimulation. Gaze aversion. Short bursts.',
+    clues: ['Turns head away from you', 'Closes eyes or squints', 'Noisy or bright environment', 'Too much handling by visitors', 'Stiffening body'],
+    fixes: ['🌑 Dark, quiet room', '🤫 Reduce voices/noise', '🌧️ White noise instead', '⏳ Wait it out — less is more'],
+    warn: null
+  },
+  {
+    icon: '🌡️', title: 'Too Hot or Too Cold', color: '#26C6DA',
+    tags: ['Easy to miss', 'Check first', 'Newborns especially'],
+    sound: 'Whimpery, unsettled. No clear pattern. May sweat or have mottled skin.',
+    clues: ['Damp neck/hairline = too warm', 'Mottled or pale skin = too cold', 'Chest is cold to touch', 'More than 1 layer in warm room', 'Check room temp (ideal 16–20°C)'],
+    fixes: ['🌡️ Room temp 16–20°C', '👕 One more layer than you wear', '❌ No loose blankets under 12mo', '✋ Feel chest (not hands) to judge temp'],
+    warn: null
+  }
+];
+
+const container = document.getElementById('cards');
+CRIES.forEach((cry, i) => {
+  const el = document.createElement('div');
+  el.className = 'cry-card';
+  el.innerHTML = `
+    <div class="cry-header" onclick="toggle(${i})" id="hdr-${i}" style="border-left-color:${cry.color}">
+      <span class="c-icon">${cry.icon}</span>
+      <span class="c-title">${cry.title}</span>
+      <span class="c-arrow">›</span>
+    </div>
+    <div class="cry-body" id="body-${i}">
+      <div class="tag-row">${cry.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      <div class="section-title">Sound pattern</div>
+      <p style="font-size:0.83rem;line-height:1.6;color:#555;margin-bottom:6px">${cry.sound}</p>
+      <div class="section-title">Signs to look for</div>
+      <ul class="clues">${cry.clues.map(c => `<li>${c}</li>`).join('')}</ul>
+      <div class="section-title">What to try</div>
+      <div class="fix-list">${cry.fixes.map(f => `<div class="fix">${f}</div>`).join('')}</div>
+      ${cry.warn ? `<div class="warn"><strong>⚠️ Seek help if:</strong>${cry.warn.text}</div>` : ''}
+    </div>`;
+  container.appendChild(el);
+});
+
+function toggle(i) {
+  const hdr = document.getElementById('hdr-' + i);
+  const body = document.getElementById('body-' + i);
+  hdr.classList.toggle('open');
+  body.classList.toggle('open');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed Tracker · Baby & Me</title>
+<style>
+  :root { --pp: #FF7B54; --pl: #FFE8DF; --bg: #FFF9F5; --text: #3D3D3D; --muted: #999; --white: #fff; --shadow: 0 4px 24px rgba(0,0,0,0.09); --radius: 18px; --green: #4CAF50; --blue: #5BB8B0; --amber: #FFC107; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+
+  /* Alarm banner */
+  #alarm-banner {
+    display: none; background: #FFF3CD; border-left: 5px solid var(--amber);
+    padding: 14px 20px; font-weight: 700; font-size: 0.92rem;
+    animation: alarmPulse 1s ease-in-out infinite;
+  }
+  @keyframes alarmPulse { 0%,100%{background:#FFF3CD} 50%{background:#FFE082} }
+  #alarm-banner button { float: right; background: var(--amber); border: none; border-radius: 8px; padding: 4px 12px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
+
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px; }
+
+  /* Next feed card */
+  .next-card {
+    background: linear-gradient(135deg, var(--pp), #ff9a7b);
+    color: white; border-radius: var(--radius);
+    padding: 20px; margin-bottom: 20px; text-align: center;
+  }
+  .next-card .label { font-size: 0.8rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 1px; }
+  .next-card .countdown { font-size: 2.4rem; font-weight: 800; margin: 4px 0; letter-spacing: -1px; }
+  .next-card .sub { font-size: 0.82rem; opacity: 0.85; }
+
+  /* Log section */
+  .card { background: var(--white); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .card h3 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 14px; }
+
+  .seg { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid #e8e0d8; margin-bottom: 12px; }
+  .seg button { flex: 1; padding: 9px 4px; background: var(--white); border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; color: var(--muted); }
+  .seg button.active { background: var(--pp); color: white; }
+
+  .row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .row label { font-size: 0.8rem; font-weight: 600; color: var(--muted); min-width: 60px; }
+  .row input, .row select { flex: 1; border: 1px solid #e8e0d8; border-radius: 10px; padding: 9px 12px; font-size: 0.88rem; font-family: inherit; background: var(--bg); outline: none; }
+  .row input:focus, .row select:focus { border-color: var(--pp); }
+
+  .alarm-row { background: var(--pl); border-radius: 12px; padding: 12px 14px; margin-top: 4px; }
+  .alarm-row p { font-size: 0.78rem; font-weight: 700; color: var(--pp); margin-bottom: 8px; }
+  .alarm-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .achip { padding: 6px 12px; border-radius: 20px; border: 2px solid transparent; background: var(--white); font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: inherit; color: var(--pp); transition: all 0.15s; }
+  .achip.active { background: var(--pp); color: white; border-color: var(--pp); }
+
+  .log-btn { width: 100%; padding: 13px; background: var(--pp); color: white; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; margin-top: 6px; font-family: inherit; transition: opacity 0.15s; }
+  .log-btn:active { opacity: 0.85; }
+
+  /* Quick log row */
+  .quick-row { display: flex; gap: 10px; }
+  .quick-btn { flex: 1; padding: 12px 8px; background: var(--white); border: 2px solid #e8e0d8; border-radius: 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center; font-family: inherit; transition: all 0.15s; color: var(--text); }
+  .quick-btn:active { transform: scale(0.96); }
+  .quick-btn .qi { font-size: 1.5rem; display: block; margin-bottom: 2px; }
+
+  /* History */
+  #history-list { list-style: none; }
+  #history-list li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #f0e8e0; font-size: 0.83rem;
+  }
+  #history-list li:last-child { border-bottom: none; }
+  .h-icon { font-size: 1.2rem; }
+  .h-main { flex: 1; font-weight: 600; }
+  .h-time { color: var(--muted); font-size: 0.75rem; }
+  .h-del { background: none; border: none; color: #ccc; font-size: 1rem; cursor: pointer; }
+  .empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 16px 0; }
+</style>
+</head>
+<body>
+
+<div id="alarm-banner">
+  <button onclick="dismissAlarm()">Dismiss</button>
+  ⏰ <span id="alarm-text">Time to feed baby!</span>
+</div>
+
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>🍼 Feed Tracker</h2>
+</div>
+
+<div class="wrap">
+
+  <div class="next-card" id="next-card" style="display:none">
+    <div class="label">Next feed in</div>
+    <div class="countdown" id="next-countdown">--:--</div>
+    <div class="sub" id="next-sub"></div>
+  </div>
+
+  <!-- Feed Log -->
+  <div class="card">
+    <h3>Log a Feed</h3>
+    <div class="seg" id="feed-type-seg">
+      <button class="active" onclick="setSeg('feed-type','breast',this)">Breast</button>
+      <button onclick="setSeg('feed-type','bottle',this)">Bottle</button>
+      <button onclick="setSeg('feed-type','solid',this)">Solid</button>
+    </div>
+    <div class="row">
+      <label>Time</label>
+      <input type="time" id="feed-time">
+    </div>
+    <div class="row" id="amount-row">
+      <label>Amount</label>
+      <input type="text" id="feed-amount" placeholder="e.g. 120ml / 15min">
+    </div>
+    <div class="alarm-row">
+      <p>⏰ Set next feed alarm</p>
+      <div class="alarm-chips">
+        <button class="achip" onclick="selectAlarm(1.5,this)">1.5 hr</button>
+        <button class="achip" onclick="selectAlarm(2,this)">2 hr</button>
+        <button class="achip active" onclick="selectAlarm(2.5,this)">2.5 hr</button>
+        <button class="achip" onclick="selectAlarm(3,this)">3 hr</button>
+        <button class="achip" onclick="selectAlarm(4,this)">4 hr</button>
+        <button class="achip" onclick="selectAlarm(0,this)">None</button>
+      </div>
+    </div>
+    <button class="log-btn" onclick="logFeed()">+ Log Feed</button>
+  </div>
+
+  <!-- Quick Log -->
+  <div class="card">
+    <h3>Quick Log</h3>
+    <div class="quick-row">
+      <button class="quick-btn" onclick="quickLog('sleep')"><span class="qi">😴</span>Sleep</button>
+      <button class="quick-btn" onclick="quickLog('wake')"><span class="qi">☀️</span>Wake</button>
+      <button class="quick-btn" onclick="quickLog('wet')"><span class="qi">💧</span>Wet</button>
+      <button class="quick-btn" onclick="quickLog('dirty')"><span class="qi">💩</span>Dirty</button>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h3>Today's Log</h3>
+    <ul id="history-list"><li class="empty">Nothing logged yet</li></ul>
+    <button class="log-btn" style="background:#f0e8e0;color:var(--muted);margin-top:12px;" onclick="clearToday()">Clear Today</button>
+  </div>
+
+</div>
+
+<script>
+const STATE_KEY = 'babytracker_v1';
+let state = { alarmHours: 2.5, log: [], nextFeedAt: null };
+let feedType = 'breast';
+let alarmTimer = null;
+
+function load() {
+  try { const s = localStorage.getItem(STATE_KEY); if (s) state = JSON.parse(s); } catch(e){}
+  // set default time to now
+  const now = new Date();
+  document.getElementById('feed-time').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  // restore alarm chip
+  document.querySelectorAll('.achip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.achip').forEach(c => {
+    if (parseFloat(c.getAttribute('onclick').match(/[\d.]+/)?.[0]) === state.alarmHours) c.classList.add('active');
+  });
+  renderHistory();
+  startCountdown();
+  checkAlarm();
+}
+
+function save() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+
+function setSeg(group, val, btn) {
+  document.querySelectorAll(`#${group}-seg button`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  feedType = val;
+}
+
+function selectAlarm(hrs, btn) {
+  state.alarmHours = hrs;
+  document.querySelectorAll('.achip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function logFeed() {
+  const timeVal = document.getElementById('feed-time').value;
+  const amount = document.getElementById('feed-amount').value.trim();
+  const now = new Date();
+  const [h, m] = timeVal.split(':').map(Number);
+  const t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+
+  const entry = { type: 'feed', sub: feedType, amount, time: t.getTime(), id: Date.now() };
+  state.log.unshift(entry);
+
+  if (state.alarmHours > 0) {
+    state.nextFeedAt = t.getTime() + state.alarmHours * 3600000;
+    startCountdown();
+  }
+  save(); renderHistory();
+  document.getElementById('feed-amount').value = '';
+  flashBtn();
+}
+
+function quickLog(type) {
+  const icons = { sleep:'😴', wake:'☀️', wet:'💧', dirty:'💩' };
+  const entry = { type, time: Date.now(), id: Date.now() };
+  state.log.unshift(entry);
+  save(); renderHistory();
+}
+
+function startCountdown() {
+  clearInterval(alarmTimer);
+  if (!state.nextFeedAt) { document.getElementById('next-card').style.display = 'none'; return; }
+  document.getElementById('next-card').style.display = '';
+  alarmTimer = setInterval(tickCountdown, 1000);
+  tickCountdown();
+}
+
+function tickCountdown() {
+  const diff = state.nextFeedAt - Date.now();
+  const card = document.getElementById('next-card');
+  if (diff <= 0) {
+    clearInterval(alarmTimer);
+    document.getElementById('next-countdown').textContent = 'NOW!';
+    document.getElementById('next-sub').textContent = 'Feed time!';
+    card.style.background = 'linear-gradient(135deg,#e53935,#ef5350)';
+    showAlarmBanner();
+    return;
+  }
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('next-countdown').textContent = h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+  const at = new Date(state.nextFeedAt);
+  document.getElementById('next-sub').textContent = `Around ${at.getHours()}:${String(at.getMinutes()).padStart(2,'0')}`;
+}
+
+function checkAlarm() {
+  if (state.nextFeedAt && state.nextFeedAt <= Date.now()) showAlarmBanner();
+}
+
+function showAlarmBanner() {
+  document.getElementById('alarm-banner').style.display = 'block';
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('🍼 Feed time!', { body: 'Baby is due for a feed.', icon: '' });
+  } else if ('Notification' in window && Notification.permission !== 'denied') {
+    Notification.requestPermission();
+  }
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    for (let i = 0; i < 3; i++) {
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
+      osc.frequency.value = 880; g.gain.setValueAtTime(0.3, ac.currentTime + i * 0.5);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + i * 0.5 + 0.4);
+      osc.start(ac.currentTime + i * 0.5); osc.stop(ac.currentTime + i * 0.5 + 0.4);
+    }
+  } catch(e){}
+}
+
+function dismissAlarm() {
+  document.getElementById('alarm-banner').style.display = 'none';
+  state.nextFeedAt = null;
+  document.getElementById('next-card').style.display = 'none';
+  clearInterval(alarmTimer);
+  save();
+}
+
+function renderHistory() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const items = state.log.filter(e => e.time >= today.getTime());
+  const ul = document.getElementById('history-list');
+  if (!items.length) { ul.innerHTML = '<li class="empty">Nothing logged yet</li>'; return; }
+  const icons = { feed:'🍼', sleep:'😴', wake:'☀️', wet:'💧', dirty:'💩' };
+  const labels = { breast:'Breastfeed', bottle:'Bottle', solid:'Solid food', sleep:'Sleep started', wake:'Woke up', wet:'Wet diaper', dirty:'Dirty diaper' };
+  ul.innerHTML = items.map(e => {
+    const d = new Date(e.time);
+    const t = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const main = e.type === 'feed' ? labels[e.sub] + (e.amount ? ` · ${e.amount}` : '') : labels[e.type];
+    return `<li>
+      <span class="h-icon">${icons[e.type]||'•'}</span>
+      <span class="h-main">${main}</span>
+      <span class="h-time">${t}</span>
+      <button class="h-del" onclick="deleteEntry(${e.id})">✕</button>
+    </li>`;
+  }).join('');
+}
+
+function deleteEntry(id) {
+  state.log = state.log.filter(e => e.id !== id);
+  save(); renderHistory();
+}
+
+function clearToday() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  state.log = state.log.filter(e => e.time < today.getTime());
+  save(); renderHistory();
+}
+
+function flashBtn() {
+  const btn = document.querySelector('.log-btn');
+  btn.textContent = '✓ Logged!'; btn.style.background = '#4CAF50';
+  setTimeout(() => { btn.textContent = '+ Log Feed'; btn.style.background = ''; }, 1500);
+}
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkAlarm(); });
+load();
+</script>
+</body>
+</html>

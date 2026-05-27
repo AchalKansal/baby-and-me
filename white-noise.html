@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>White Noise · Baby & Me</title>
+<style>
+  :root { --pp: #FF7B54; --pl: #FFE8DF; --bg: #FFF9F5; --text: #3D3D3D; --muted: #999; --white: #fff; --shadow: 0 4px 24px rgba(0,0,0,0.09); --radius: 18px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; line-height: 1; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+
+  .hero { text-align: center; padding: 32px 20px 20px; }
+  .big-icon { font-size: 4rem; margin-bottom: 8px; }
+  .now-playing { font-size: 1.1rem; font-weight: 700; color: var(--pp); min-height: 28px; }
+
+  /* Visualizer ring */
+  .ring-wrap { display: flex; justify-content: center; margin: 16px 0; }
+  #ring { width: 120px; height: 120px; border-radius: 50%; border: 5px solid var(--pl); position: relative; display: flex; align-items: center; justify-content: center; transition: border-color 0.3s; }
+  #ring.active { border-color: var(--pp); animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,123,84,0.25)} 50%{box-shadow:0 0 0 18px rgba(255,123,84,0)} }
+  #ring-btn { font-size: 2rem; background: none; border: none; cursor: pointer; }
+
+  .sounds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 20px; max-width: 480px; margin: 0 auto; }
+  .sound-btn {
+    background: var(--white); border: 2px solid transparent; border-radius: 14px;
+    padding: 14px 8px; text-align: center; cursor: pointer;
+    box-shadow: var(--shadow); transition: all 0.15s; font-family: inherit;
+  }
+  .sound-btn .s-icon { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+  .sound-btn .s-label { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+  .sound-btn.active { border-color: var(--pp); background: var(--pl); }
+  .sound-btn:active { transform: scale(0.96); }
+
+  .controls { max-width: 480px; margin: 24px auto; padding: 0 20px; }
+  .ctrl-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .ctrl-label { font-size: 0.8rem; font-weight: 600; width: 56px; color: var(--muted); }
+  input[type=range] { flex: 1; accent-color: var(--pp); height: 4px; cursor: pointer; }
+
+  .timer-row { background: var(--white); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-top: 8px; }
+  .timer-row label { font-size: 0.82rem; font-weight: 700; display: block; margin-bottom: 10px; }
+  .timer-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tbtn {
+    padding: 7px 14px; border-radius: 20px; border: 2px solid #e8e0d8;
+    background: var(--white); font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .tbtn.active { border-color: var(--pp); background: var(--pl); color: var(--pp); }
+  #timer-display { margin-top: 10px; font-size: 0.85rem; color: var(--pp); font-weight: 700; min-height: 20px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>🌧️ White Noise</h2>
+</div>
+
+<div class="hero">
+  <div class="big-icon">🌙</div>
+  <div class="now-playing" id="now-playing">Choose a sound</div>
+</div>
+
+<div class="ring-wrap">
+  <div id="ring">
+    <button id="ring-btn" onclick="togglePlay()" title="Play/Pause">▶</button>
+  </div>
+</div>
+
+<div class="sounds">
+  <button class="sound-btn" onclick="selectSound('rain')" id="btn-rain">
+    <span class="s-icon">🌧️</span><span class="s-label">Rain</span>
+  </button>
+  <button class="sound-btn" onclick="selectSound('womb')" id="btn-womb">
+    <span class="s-icon">🌀</span><span class="s-label">Womb</span>
+  </button>
+  <button class="sound-btn" onclick="selectSound('fan')" id="btn-fan">
+    <span class="s-icon">💨</span><span class="s-label">Fan</span>
+  </button>
+  <button class="sound-btn" onclick="selectSound('ocean')" id="btn-ocean">
+    <span class="s-icon">🌊</span><span class="s-label">Ocean</span>
+  </button>
+  <button class="sound-btn" onclick="selectSound('white')" id="btn-white">
+    <span class="s-icon">📺</span><span class="s-label">White</span>
+  </button>
+  <button class="sound-btn" onclick="selectSound('brown')" id="btn-brown">
+    <span class="s-icon">🍂</span><span class="s-label">Brown</span>
+  </button>
+</div>
+
+<div class="controls">
+  <div class="ctrl-row">
+    <span class="ctrl-label">Volume</span>
+    <input type="range" id="vol" min="0" max="100" value="60" oninput="setVolume(this.value)">
+  </div>
+  <div class="timer-row">
+    <label>Auto-stop timer</label>
+    <div class="timer-btns">
+      <button class="tbtn" onclick="setTimer(0)" id="t0">Off</button>
+      <button class="tbtn" onclick="setTimer(15)" id="t15">15m</button>
+      <button class="tbtn" onclick="setTimer(30)" id="t30">30m</button>
+      <button class="tbtn" onclick="setTimer(60)" id="t60">1hr</button>
+      <button class="tbtn" onclick="setTimer(120)" id="t120">2hr</button>
+    </div>
+    <div id="timer-display"></div>
+  </div>
+</div>
+
+<script>
+let ctx = null, gainNode = null, sourceNode = null;
+let playing = false, currentSound = null;
+let timerMins = 0, timerInterval = null, timerEnd = null;
+
+function ensureCtx() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    gainNode = ctx.createGain();
+    gainNode.connect(ctx.destination);
+    gainNode.gain.value = 0.6;
+  }
+}
+
+function makeNoise(type) {
+  const bufSize = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+
+  if (type === 'white') {
+    src.connect(gainNode);
+    return src;
+  }
+  const filter = ctx.createBiquadFilter();
+  if (type === 'rain') {
+    filter.type = 'bandpass'; filter.frequency.value = 1200; filter.Q.value = 0.8;
+  } else if (type === 'womb') {
+    filter.type = 'lowpass'; filter.frequency.value = 180; filter.Q.value = 1.2;
+  } else if (type === 'fan') {
+    filter.type = 'lowpass'; filter.frequency.value = 400; filter.Q.value = 0.5;
+  } else if (type === 'ocean') {
+    filter.type = 'bandpass'; filter.frequency.value = 600; filter.Q.value = 0.4;
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.value = 0.12;
+    lfoGain.gain.value = 300;
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    lfo.start();
+  } else if (type === 'brown') {
+    filter.type = 'lowpass'; filter.frequency.value = 700; filter.Q.value = 0.3;
+    // extra low-shelf boost
+    const shelf = ctx.createBiquadFilter();
+    shelf.type = 'lowshelf'; shelf.frequency.value = 200; shelf.gain.value = 8;
+    src.connect(filter);
+    filter.connect(shelf);
+    shelf.connect(gainNode);
+    return src;
+  }
+  src.connect(filter);
+  filter.connect(gainNode);
+  return src;
+}
+
+function stopSource() {
+  if (sourceNode) { try { sourceNode.stop(); } catch(e){} sourceNode = null; }
+}
+
+function selectSound(type) {
+  ensureCtx();
+  stopSource();
+  currentSound = type;
+  document.querySelectorAll('.sound-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + type).classList.add('active');
+  const names = { rain:'Gentle Rain', womb:'Womb Sounds', fan:'Fan', ocean:'Ocean Waves', white:'White Noise', brown:'Brown Noise' };
+  document.getElementById('now-playing').textContent = names[type];
+  if (playing) {
+    sourceNode = makeNoise(type);
+    sourceNode.start();
+  } else {
+    playing = true;
+    sourceNode = makeNoise(type);
+    sourceNode.start();
+    updatePlayUI();
+  }
+}
+
+function togglePlay() {
+  if (!currentSound) { selectSound('rain'); return; }
+  playing = !playing;
+  if (playing) {
+    ensureCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    sourceNode = makeNoise(currentSound);
+    sourceNode.start();
+  } else {
+    stopSource();
+  }
+  updatePlayUI();
+}
+
+function updatePlayUI() {
+  document.getElementById('ring-btn').textContent = playing ? '⏸' : '▶';
+  document.getElementById('ring').classList.toggle('active', playing);
+}
+
+function setVolume(v) { if (gainNode) gainNode.gain.value = v / 100; }
+
+function setTimer(mins) {
+  clearInterval(timerInterval);
+  timerMins = mins;
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('active'));
+  document.getElementById('t' + mins).classList.add('active');
+  if (mins === 0) { document.getElementById('timer-display').textContent = ''; return; }
+  timerEnd = Date.now() + mins * 60000;
+  timerInterval = setInterval(() => {
+    const left = timerEnd - Date.now();
+    if (left <= 0) {
+      clearInterval(timerInterval);
+      stopSource(); playing = false; updatePlayUI();
+      document.getElementById('timer-display').textContent = 'Timer ended';
+      return;
+    }
+    const m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);
+    document.getElementById('timer-display').textContent = `Stops in ${m}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+</script>
+</body>
+</html>
