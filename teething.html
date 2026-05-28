@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teething Tracker · Baby & Me</title>
+<style>
+  :root {
+    --pp: #FF7B54; --pl: #FFF0EA; --bg: #FFF9F5;
+    --text: #3D3D3D; --muted: #999; --white: #fff;
+    --shadow: 0 4px 20px rgba(0,0,0,0.08); --radius: 16px;
+    --teal: #5BB8B0; --teal-l: #DCF2F0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; }
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+  .topbar .prog { margin-left: auto; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
+
+  /* Progress bar */
+  .progress-bar {
+    background: #e8e0d8; border-radius: 10px; height: 8px; margin-bottom: 24px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 10px;
+    background: linear-gradient(90deg, var(--teal), var(--pp));
+    transition: width 0.4s ease;
+  }
+
+  /* Mouth diagram */
+  .mouth-wrap {
+    display: flex; justify-content: center; margin-bottom: 28px;
+  }
+  .mouth-svg { width: min(90vw, 400px); height: auto; }
+
+  .tooth-btn {
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tooth-btn:hover .tooth-body { filter: brightness(0.9); }
+
+  /* Timeline */
+  .section-title {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-bottom: 14px;
+  }
+  .timeline { display: flex; flex-direction: column; gap: 10px; }
+  .tl-item {
+    background: var(--white); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .tl-tooth { font-size: 1.6rem; }
+  .tl-info { flex: 1; }
+  .tl-name { font-size: 0.88rem; font-weight: 700; }
+  .tl-date { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .tl-remove { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #ccc; padding: 4px; }
+  .empty-tl { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px; }
+
+  /* Tips */
+  .tips-box {
+    background: var(--teal-l); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 28px;
+  }
+  .tips-box h3 { font-size: 0.85rem; font-weight: 800; color: var(--teal); margin-bottom: 10px; }
+  .tips-box ul { padding-left: 16px; }
+  .tips-box li { font-size: 0.8rem; color: var(--text); margin-bottom: 6px; line-height: 1.5; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 100; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 24px 24px 0 0;
+    padding: 24px 20px 36px; width: 100%; max-width: 520px;
+    animation: slideUp 0.28s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+  .modal-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 18px; }
+  .modal-date { width: 100%; padding: 12px 14px; border-radius: var(--radius); border: 2px solid #e8e0d8; font-family: inherit; font-size: 0.9rem; background: var(--bg); color: var(--text); margin-bottom: 14px; outline: none; }
+  .modal-date:focus { border-color: var(--pp); }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn-save { flex: 1; padding: 14px; border-radius: var(--radius); background: var(--pp); color: #fff; border: none; font-size: 0.9rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .btn-cancel { padding: 14px 18px; border-radius: var(--radius); background: #f0f0f0; color: var(--muted); border: none; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>🦷 Teething Tracker</h2>
+  <span class="prog" id="prog">0 / 20</span>
+</div>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="tips-box">
+    <h3>💡 Teething Tips</h3>
+    <ul>
+      <li>Lower central incisors usually appear first (6–10 months)</li>
+      <li>Chilled (not frozen) teething rings can soothe gums</li>
+      <li>Gently rub gums with a clean finger for relief</li>
+      <li>Drooling and fussiness are normal during teething</li>
+    </ul>
+  </div>
+
+  <div class="mouth-wrap">
+    <svg class="mouth-svg" viewBox="0 0 400 310" xmlns="http://www.w3.org/2000/svg" id="mouthSvg"></svg>
+  </div>
+
+  <div class="section-title">🦷 Eruption Timeline</div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="maybeClose(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sub" id="modalSub"></div>
+    <input type="date" class="modal-date" id="modalDate">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTooth()">Mark as Erupted ✅</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var STORAGE_KEY = 'teething_v1';
+var data = {};
+var modalToothId = null;
+
+var TEETH = [
+  { id:'uR5', name:'Upper Right 2nd Molar',    jaw:'upper', idx:0, age:'25–33 mo' },
+  { id:'uR4', name:'Upper Right 1st Molar',    jaw:'upper', idx:1, age:'13–19 mo' },
+  { id:'uR3', name:'Upper Right Canine',        jaw:'upper', idx:2, age:'16–22 mo' },
+  { id:'uR2', name:'Upper Right Lateral Inc.',  jaw:'upper', idx:3, age:'9–13 mo'  },
+  { id:'uR1', name:'Upper Right Central Inc.',  jaw:'upper', idx:4, age:'8–12 mo'  },
+  { id:'uL1', name:'Upper Left Central Inc.',   jaw:'upper', idx:5, age:'8–12 mo'  },
+  { id:'uL2', name:'Upper Left Lateral Inc.',   jaw:'upper', idx:6, age:'9–13 mo'  },
+  { id:'uL3', name:'Upper Left Canine',         jaw:'upper', idx:7, age:'16–22 mo' },
+  { id:'uL4', name:'Upper Left 1st Molar',      jaw:'upper', idx:8, age:'13–19 mo' },
+  { id:'uL5', name:'Upper Left 2nd Molar',      jaw:'upper', idx:9, age:'25–33 mo' },
+  { id:'lR5', name:'Lower Right 2nd Molar',    jaw:'lower', idx:0, age:'23–31 mo' },
+  { id:'lR4', name:'Lower Right 1st Molar',    jaw:'lower', idx:1, age:'12–18 mo' },
+  { id:'lR3', name:'Lower Right Canine',        jaw:'lower', idx:2, age:'17–23 mo' },
+  { id:'lR2', name:'Lower Right Lateral Inc.',  jaw:'lower', idx:3, age:'10–16 mo' },
+  { id:'lR1', name:'Lower Right Central Inc.',  jaw:'lower', idx:4, age:'6–10 mo'  },
+  { id:'lL1', name:'Lower Left Central Inc.',   jaw:'lower', idx:5, age:'6–10 mo'  },
+  { id:'lL2', name:'Lower Left Lateral Inc.',   jaw:'lower', idx:6, age:'10–16 mo' },
+  { id:'lL3', name:'Lower Left Canine',         jaw:'lower', idx:7, age:'17–23 mo' },
+  { id:'lL4', name:'Lower Left 1st Molar',      jaw:'lower', idx:8, age:'12–18 mo' },
+  { id:'lL5', name:'Lower Left 2nd Molar',      jaw:'lower', idx:9, age:'23–31 mo' }
+];
+
+function load() {
+  try { data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { data = {}; }
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function renderMouth() {
+  var svg = document.getElementById('mouthSvg');
+  var html = '';
+
+  // ViewBox: 400 x 310
+  // Teeth x positions and widths (10 per jaw, 12px gap between each)
+  var TX = [20, 66, 106, 140, 172, 204, 236, 268, 302, 342];
+  var TW = [34, 28,  22,  20,  20,  20,  20,  22,  28,  34];
+  var TH = 30; // visible crown height
+
+  // Upper gum arch: bezier from (0,60) ctrl(200,20) to (400,60)
+  // y at tooth x ≈ 60 - 80*t*(1-t) where t = x/400
+  var UY = [56, 49, 44, 42, 40, 40, 42, 44, 49, 56]; // gum line y per column
+
+  // Lower gum arch: bezier from (0,250) ctrl(200,290) to (400,250)
+  // y at tooth x ≈ 250 + 80*t*(1-t)
+  var LB = [254, 261, 266, 268, 270, 270, 268, 266, 261, 254]; // gum line y per column
+  // lower teeth: crown goes UP from gum, so y_top = LB[i] - TH
+
+  // 1. Background
+  html += '<rect x="0" y="0" width="400" height="310" fill="#FFF5F0"/>';
+
+  // 2. Upper gum (solid filled arch from top down to curved line)
+  html += '<path d="M 0 0 L 400 0 L 400 60 Q 200 20 0 60 Z" fill="#F4A0A0"/>';
+
+  // 3. Lower gum (solid filled arch from bottom up to curved line)
+  html += '<path d="M 0 310 L 400 310 L 400 250 Q 200 290 0 250 Z" fill="#F4A0A0"/>';
+
+  // 4. Oral cavity center fill
+  html += '<rect x="0" y="60" width="400" height="190" fill="#FFF0EE"/>';
+
+  // 5. Tongue
+  html += '<ellipse cx="200" cy="155" rx="65" ry="30" fill="#FF8888" stroke="#E06060" stroke-width="2"/>';
+
+  // 6. Centre midline (dashed)
+  html += '<line x1="200" y1="60" x2="200" y2="250" stroke="#E8A090" stroke-width="1" stroke-dasharray="5,5" opacity="0.5"/>';
+
+  // 7. Upper teeth
+  var upperIds = ['uR5','uR4','uR3','uR2','uR1','uL1','uL2','uL3','uL4','uL5'];
+  for (var i = 0; i < 10; i++) {
+    var uid = upperIds[i];
+    var ue = !!data[uid];
+    var ufill  = ue ? '#FFFFFF' : '#FFEECC';
+    var ustroke = ue ? '#5BB8B0' : '#DDAA88';
+    var usw = ue ? 3 : 2;
+    var ucx = TX[i] + TW[i] / 2;
+    var ucy = UY[i] + TH / 2;
+    html += '<g class="tooth-btn" onclick="openModal(\'' + uid + '\')">';
+    html += '<rect class="tooth-body" x="' + TX[i] + '" y="' + UY[i] + '" width="' + TW[i] + '" height="' + TH + '" rx="5" fill="' + ufill + '" stroke="' + ustroke + '" stroke-width="' + usw + '"/>';
+    if (ue) {
+      html += '<text x="' + ucx + '" y="' + (ucy + 4) + '" text-anchor="middle" font-size="12" fill="#5BB8B0">✓</text>';
+    }
+    html += '</g>';
+  }
+
+  // 8. Lower teeth
+  var lowerIds = ['lR5','lR4','lR3','lR2','lR1','lL1','lL2','lL3','lL4','lL5'];
+  for (var j = 0; j < 10; j++) {
+    var lid = lowerIds[j];
+    var le = !!data[lid];
+    var lfill  = le ? '#FFFFFF' : '#FFEECC';
+    var lstroke = le ? '#5BB8B0' : '#DDAA88';
+    var lsw = le ? 3 : 2;
+    var ly = LB[j] - TH;
+    var lcx = TX[j] + TW[j] / 2;
+    var lcy = ly + TH / 2;
+    html += '<g class="tooth-btn" onclick="openModal(\'' + lid + '\')">';
+    html += '<rect class="tooth-body" x="' + TX[j] + '" y="' + ly + '" width="' + TW[j] + '" height="' + TH + '" rx="5" fill="' + lfill + '" stroke="' + lstroke + '" stroke-width="' + lsw + '"/>';
+    if (le) {
+      html += '<text x="' + lcx + '" y="' + (lcy + 4) + '" text-anchor="middle" font-size="12" fill="#5BB8B0">✓</text>';
+    }
+    html += '</g>';
+  }
+
+  // 9. Labels (drawn last so they're on top)
+  html += '<text x="200" y="13" text-anchor="middle" font-size="11" font-weight="bold" fill="#C07060" font-family="sans-serif">UPPER JAW</text>';
+  html += '<text x="200" y="303" text-anchor="middle" font-size="11" font-weight="bold" fill="#C07060" font-family="sans-serif">LOWER JAW</text>';
+  html += '<text x="14" y="158" text-anchor="middle" font-size="12" font-weight="bold" fill="#C09080" font-family="sans-serif">R</text>';
+  html += '<text x="386" y="158" text-anchor="middle" font-size="12" font-weight="bold" fill="#C09080" font-family="sans-serif">L</text>';
+
+  svg.innerHTML = html;
+  updateProgress();
+}
+
+function updateProgress() {
+  var count = Object.keys(data).length;
+  document.getElementById('prog').textContent = count + ' / 20';
+  document.getElementById('progressFill').style.width = (count / 20 * 100) + '%';
+}
+
+function renderTimeline() {
+  var el = document.getElementById('timeline');
+  var entries = Object.keys(data).map(function(id) {
+    var t = TEETH.find(function(t2) { return t2.id === id; });
+    return { id: id, name: t ? t.name : id, date: data[id] };
+  }).sort(function(a, b) { return b.date.localeCompare(a.date); });
+
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="empty-tl">No teeth marked yet. Tap a tooth above to record it!</div>';
+    return;
+  }
+
+  el.innerHTML = '';
+  entries.forEach(function(e) {
+    var item = document.createElement('div');
+    item.className = 'tl-item';
+    item.innerHTML = '<span class="tl-tooth">🦷</span>'
+      + '<div class="tl-info"><div class="tl-name">' + e.name + '</div><div class="tl-date">' + e.date + '</div></div>'
+      + '<button class="tl-remove" onclick="removeTooth(\'' + e.id + '\')">✕</button>';
+    el.appendChild(item);
+  });
+}
+
+function openModal(id) {
+  var t = TEETH.find(function(t2) { return t2.id === id; });
+  if (!t) return;
+  modalToothId = id;
+  document.getElementById('modalTitle').textContent = '🦷 ' + t.name;
+  document.getElementById('modalSub').textContent = 'Typical age: ' + t.age;
+  document.getElementById('modalDate').value = data[id] || todayStr();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  modalToothId = null;
+}
+
+function maybeClose(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function saveTooth() {
+  if (!modalToothId) return;
+  data[modalToothId] = document.getElementById('modalDate').value || todayStr();
+  save();
+  closeModal();
+  renderMouth();
+  renderTimeline();
+}
+
+function removeTooth(id) {
+  delete data[id];
+  save();
+  renderMouth();
+  renderTimeline();
+}
+
+load();
+renderMouth();
+renderTimeline();
+</script>
+</body>
+</html>

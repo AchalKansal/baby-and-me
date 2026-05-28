@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby Piano · Baby & Me</title>
+<style>
+  :root {
+    --bg: #FFF8F0;
+    --text: #3D3D3D;
+    --muted: #999;
+    --white: #fff;
+    --shadow: 0 4px 20px rgba(0,0,0,0.1);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; user-select: none; }
+  .topbar { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+  .back { text-decoration: none; color: #FF7B54; font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
+
+  .hint { text-align: center; font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
+
+  /* Note display */
+  .note-display {
+    text-align: center;
+    font-size: 3rem;
+    min-height: 72px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
+  }
+  .note-display.pop { transform: scale(1.3); }
+
+  .note-label {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    min-height: 28px;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* Piano keys */
+  .keys {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .key {
+    flex: 1;
+    border-radius: 16px;
+    min-height: 140px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 14px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: rgba(255,255,255,0.9);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15), var(--shadow);
+    transition: transform 0.08s, box-shadow 0.08s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .key:active, .key.pressed {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+  }
+  .key .note-name { font-size: 1rem; font-weight: 900; margin-bottom: 2px; }
+  .key .emoji { font-size: 1.6rem; margin-bottom: 6px; }
+
+  /* Ripple */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    transform: scale(0);
+    animation: rippleAnim 0.4s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim {
+    to { transform: scale(3); opacity: 0; }
+  }
+
+  /* Mode buttons */
+  .mode-row {
+    display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;
+  }
+  .mode-btn {
+    padding: 8px 18px; border-radius: 30px; border: 2px solid #e0e0e0;
+    background: var(--white); font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; font-family: inherit; color: var(--muted);
+    transition: all 0.15s;
+  }
+  .mode-btn.active { border-color: #FF7B54; background: #FFF0EA; color: #FF7B54; }
+
+  /* Song preview */
+  .song-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+  }
+  .song-card {
+    background: var(--white); border-radius: var(--radius); padding: 14px;
+    box-shadow: var(--shadow); cursor: pointer; text-align: center;
+    border: 2px solid transparent; transition: all 0.15s; font-family: inherit;
+  }
+  .song-card:active { transform: scale(0.97); }
+  .song-card.playing { border-color: #FF7B54; background: #FFF0EA; }
+  .song-card .sc-icon { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+  .song-card .sc-name { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>🎹 Baby Piano</h2>
+</div>
+<div class="wrap">
+  <div class="note-display" id="noteEmoji">🎵</div>
+  <div class="note-label" id="noteLabel">Tap a key!</div>
+
+  <div class="keys" id="keys"></div>
+
+  <div class="mode-row">
+    <button class="mode-btn active" onclick="setMode('play',this)">🎹 Play</button>
+    <button class="mode-btn" onclick="setMode('songs',this)">🎵 Songs</button>
+  </div>
+
+  <div id="songs-panel" style="display:none">
+    <div class="song-row" id="song-row"></div>
+  </div>
+</div>
+
+<script>
+var ac = null;
+var currentSongTimeout = null;
+var isSongPlaying = false;
+var currentSongBtn = null;
+
+var KEYS = [
+  { note:'C', freq:261.6, color:'#FF6B6B', emoji:'🔴' },
+  { note:'D', freq:293.7, color:'#FF9F43', emoji:'🟠' },
+  { note:'E', freq:329.6, color:'#FFC312', emoji:'🟡' },
+  { note:'F', freq:349.2, color:'#4BCB5D', emoji:'🟢' },
+  { note:'G', freq:392.0, color:'#54A0FF', emoji:'🔵' },
+  { note:'A', freq:440.0, color:'#A55EEA', emoji:'🟣' },
+  { note:'B', freq:493.9, color:'#FF7EB3', emoji:'🩷' },
+  { note:'C2',freq:523.3, color:'#FF6B6B', emoji:'🔴' }
+];
+
+var NOTE_EMOJIS = ['🔴','🟠','🟡','🟢','🔵','🟣','🩷','🔴'];
+var NOTE_NAMES = ['Do','Re','Mi','Fa','Sol','La','Si','Do'];
+
+var SONGS = [
+  { icon:'🌟', name:'Twinkle', notes:[[0,4],[0,4],[4,4],[4,4],[5,4],[5,4],[4,3],[3,4],[3,4],[2,4],[2,4],[1,4],[1,4],[0,3]] },
+  { icon:'🐑', name:'Baa Baa', notes:[[0,4],[0,4],[4,4],[4,4],[5,4],[4,3],[3,4],[3,4],[2,4],[2,4],[1,4],[1,4],[0,3]] },
+  { icon:'🚢', name:'Row Boat', notes:[[0,3],[0,3],[0,2],[2,2],[4,3],[4,2],[2,2],[4,2],[3,2],[5,3]] },
+  { icon:'🎶', name:'Mary Lamb', notes:[[2,4],[1,4],[0,4],[1,4],[2,4],[2,4],[2,3],[1,4],[1,4],[1,3],[2,4],[4,4],[4,3]] }
+];
+
+function getAc() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (ac.state === 'suspended') ac.resume();
+  return ac;
+}
+
+function playKey(freq, duration) {
+  var a = getAc();
+  var osc = a.createOscillator();
+  var env = a.createGain();
+  var filter = a.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 2000;
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  osc.connect(filter);
+  filter.connect(env);
+  env.connect(a.destination);
+  var t = a.currentTime;
+  var dur = duration || 0.5;
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(0.7, t + 0.02);
+  env.gain.setValueAtTime(0.7, t + dur * 0.6);
+  env.gain.linearRampToValueAtTime(0, t + dur);
+  osc.start(t);
+  osc.stop(t + dur + 0.05);
+}
+
+function pressKey(idx, el) {
+  var k = KEYS[idx];
+  playKey(k.freq, 0.6);
+  el.classList.add('pressed');
+  setTimeout(function() { el.classList.remove('pressed'); }, 120);
+
+  var rip = document.createElement('div');
+  rip.className = 'ripple';
+  rip.style.width = '60px';
+  rip.style.height = '60px';
+  rip.style.left = '50%';
+  rip.style.top = '30%';
+  rip.style.marginLeft = '-30px';
+  rip.style.marginTop = '-30px';
+  el.appendChild(rip);
+  setTimeout(function() { rip.parentNode && rip.parentNode.removeChild(rip); }, 400);
+
+  var noteEmoji = document.getElementById('noteEmoji');
+  var noteLabel = document.getElementById('noteLabel');
+  noteEmoji.textContent = NOTE_EMOJIS[idx];
+  noteLabel.textContent = NOTE_NAMES[idx] + ' (' + (k.note === 'C2' ? 'C' : k.note) + ')';
+  noteLabel.style.color = k.color;
+  noteEmoji.classList.remove('pop');
+  void noteEmoji.offsetWidth;
+  noteEmoji.classList.add('pop');
+  setTimeout(function() { noteEmoji.classList.remove('pop'); }, 200);
+}
+
+function buildKeys() {
+  var container = document.getElementById('keys');
+  container.innerHTML = '';
+  KEYS.forEach(function(k, i) {
+    var btn = document.createElement('button');
+    btn.className = 'key';
+    btn.style.background = 'linear-gradient(180deg, ' + k.color + ' 0%, ' + k.color + 'cc 100%)';
+    btn.innerHTML = '<span class="emoji">' + k.emoji + '</span><span class="note-name">' + NOTE_NAMES[i] + '</span>';
+    btn.addEventListener('pointerdown', function(e) {
+      e.preventDefault();
+      pressKey(i, btn);
+    });
+    container.appendChild(btn);
+  });
+}
+
+function setMode(mode, btn) {
+  document.querySelectorAll('.mode-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('songs-panel').style.display = mode === 'songs' ? 'block' : 'none';
+  if (mode !== 'songs') stopSong();
+}
+
+function stopSong() {
+  isSongPlaying = false;
+  clearTimeout(currentSongTimeout);
+  if (currentSongBtn) { currentSongBtn.classList.remove('playing'); currentSongBtn = null; }
+}
+
+function playSong(song, btn) {
+  stopSong();
+  if (btn === currentSongBtn) return;
+  isSongPlaying = true;
+  currentSongBtn = btn;
+  btn.classList.add('playing');
+  var idx = 0;
+  function next() {
+    if (!isSongPlaying) return;
+    if (idx >= song.notes.length) { idx = 0; }
+    var noteIdx = song.notes[idx][0];
+    var dur = song.notes[idx][1];
+    var k = KEYS[noteIdx];
+    playKey(k.freq, (dur / 8) * 0.7);
+    var keyEl = document.getElementById('keys').children[noteIdx];
+    if (keyEl) { keyEl.classList.add('pressed'); setTimeout(function() { keyEl.classList.remove('pressed'); }, 100); }
+    idx++;
+    currentSongTimeout = setTimeout(next, (dur / 8) * 700);
+  }
+  next();
+}
+
+function buildSongs() {
+  var row = document.getElementById('song-row');
+  row.innerHTML = '';
+  SONGS.forEach(function(s) {
+    var card = document.createElement('button');
+    card.className = 'song-card';
+    card.innerHTML = '<span class="sc-icon">' + s.icon + '</span><span class="sc-name">' + s.name + '</span>';
+    card.onclick = function() {
+      if (card.classList.contains('playing')) { stopSong(); return; }
+      playSong(s, card);
+    };
+    row.appendChild(card);
+  });
+}
+
+buildKeys();
+buildSongs();
+</script>
+</body>
+</html>

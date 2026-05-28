@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falling Stars · Baby & Me</title>
+<style>
+  :root { --bg: #0D0B2B; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; touch-action: none; }
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+    background: rgba(13,11,43,0.85); backdrop-filter: blur(8px);
+  }
+  .back { text-decoration: none; color: #FFD700; font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; color: #fff; }
+  .score {
+    margin-left: auto; font-size: 1rem; font-weight: 800; color: #FFD700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  canvas { display: block; }
+  .hint {
+    position: fixed; bottom: 24px; left: 0; right: 0;
+    text-align: center; color: rgba(255,255,255,0.45); font-size: 0.8rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>⭐ Falling Stars</h2>
+  <div class="score">⭐ <span id="score">0</span></div>
+</div>
+<canvas id="c"></canvas>
+<div class="hint">Tap the stars to pop them!</div>
+
+<script>
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W, H;
+var stars = [];
+var particles = [];
+var score = 0;
+var frameId;
+var ac = null;
+
+function getAc() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (ac.state === 'suspended') ac.resume();
+  return ac;
+}
+
+function playPop(pitch) {
+  try {
+    var a = getAc();
+    var osc = a.createOscillator();
+    var gain = a.createGain();
+    osc.connect(gain); gain.connect(a.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(pitch || 880, a.currentTime);
+    osc.frequency.exponentialRampToValueAtTime((pitch || 880) * 0.5, a.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.4, a.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.2);
+    osc.start(a.currentTime);
+    osc.stop(a.currentTime + 0.22);
+  } catch(e) {}
+}
+
+var STAR_EMOJIS = ['⭐','🌟','✨','💫','🌠'];
+var COLORS = ['#FFD700','#FFF176','#FFB347','#87CEEB','#DDA0DD','#98FB98','#FFB6C1'];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+function spawnStar() {
+  var r = randBetween(22, 42);
+  stars.push({
+    x: randBetween(r, W - r),
+    y: -r * 2,
+    r: r,
+    vx: randBetween(-0.5, 0.5),
+    vy: randBetween(0.8, 2.2),
+    rotation: Math.random() * Math.PI * 2,
+    rotSpeed: randBetween(-0.02, 0.02),
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    emoji: STAR_EMOJIS[Math.floor(Math.random() * STAR_EMOJIS.length)],
+    alpha: 1,
+    wobble: Math.random() * Math.PI * 2,
+    wobbleSpeed: randBetween(0.02, 0.05),
+    wobbleAmp: randBetween(0.3, 1.2)
+  });
+}
+
+function spawnParticles(x, y, color) {
+  for (var i = 0; i < 12; i++) {
+    var angle = (Math.PI * 2 / 12) * i + Math.random() * 0.3;
+    var speed = randBetween(2, 6);
+    particles.push({
+      x: x, y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: randBetween(3, 8),
+      alpha: 1,
+      color: color,
+      life: 1
+    });
+  }
+  // big sparkle text
+  particles.push({ x: x, y: y, text: '✨', alpha: 1, vy: -2, vx: randBetween(-1,1), life: 1, big: true });
+}
+
+function drawStar(s) {
+  ctx.save();
+  ctx.globalAlpha = s.alpha;
+  ctx.translate(s.x, s.y);
+  ctx.rotate(s.rotation);
+  // glow
+  ctx.shadowColor = s.color;
+  ctx.shadowBlur = 18;
+  ctx.font = (s.r * 2) + 'px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(s.emoji, 0, 0);
+  ctx.restore();
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw background gradient
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#0D0B2B');
+  grad.addColorStop(1, '#1a1040');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Spawn
+  if (Math.random() < 0.03 && stars.length < 15) spawnStar();
+
+  // Update + draw stars
+  for (var i = stars.length - 1; i >= 0; i--) {
+    var s = stars[i];
+    s.wobble += s.wobbleSpeed;
+    s.x += s.vx + Math.sin(s.wobble) * s.wobbleAmp * 0.3;
+    s.y += s.vy;
+    s.rotation += s.rotSpeed;
+    if (s.y > H + s.r * 2) { stars.splice(i, 1); continue; }
+    drawStar(s);
+  }
+
+  // Update + draw particles
+  for (var j = particles.length - 1; j >= 0; j--) {
+    var p = particles[j];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.12;
+    p.life -= 0.03;
+    p.alpha = p.life;
+    if (p.life <= 0) { particles.splice(j, 1); continue; }
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    if (p.big) {
+      ctx.font = '28px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.text, p.x, p.y);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  frameId = requestAnimationFrame(loop);
+}
+
+function hitTest(x, y) {
+  for (var i = stars.length - 1; i >= 0; i--) {
+    var s = stars[i];
+    var dx = x - s.x, dy = y - s.y;
+    if (dx * dx + dy * dy < (s.r + 10) * (s.r + 10)) {
+      spawnParticles(s.x, s.y, s.color);
+      playPop(440 + Math.random() * 440);
+      stars.splice(i, 1);
+      score++;
+      document.getElementById('score').textContent = score;
+      return true;
+    }
+  }
+  return false;
+}
+
+function onPointer(e) {
+  e.preventDefault();
+  var touches = e.changedTouches || [e];
+  for (var i = 0; i < touches.length; i++) {
+    var rect = canvas.getBoundingClientRect();
+    hitTest(touches[i].clientX - rect.left, touches[i].clientY - rect.top);
+  }
+}
+
+canvas.addEventListener('pointerdown', onPointer, { passive: false });
+canvas.addEventListener('touchstart', onPointer, { passive: false });
+
+window.addEventListener('resize', resize);
+resize();
+loop();
+
+// Pre-seed a few stars
+for (var k = 0; k < 5; k++) {
+  spawnStar();
+  stars[stars.length - 1].y = Math.random() * H * 0.6;
+}
+</script>
+</body>
+</html>
