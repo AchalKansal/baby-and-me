@@ -144,6 +144,239 @@ const CARDS = [
         <circle cx="200" cy="200" r="30" fill="#fff"/>
       </svg>`;
     }
+  },
+  {
+    name: 'Cat',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- body -->
+      <ellipse cx="200" cy="260" rx="110" ry="95" fill="#000"/>
+      <!-- head -->
+      <circle cx="200" cy="155" r="85" fill="#000"/>
+      <!-- ears -->
+      <polygon points="130,90 115,30 175,80" fill="#000"/>
+      <polygon points="270,90 285,30 225,80" fill="#000"/>
+      <!-- inner ears -->
+      <polygon points="133,85 122,45 168,78" fill="#fff"/>
+      <polygon points="267,85 278,45 232,78" fill="#fff"/>
+      <!-- face -->
+      <circle cx="200" cy="160" r="68" fill="#fff"/>
+      <!-- eyes -->
+      <ellipse cx="170" cy="148" rx="18" ry="22" fill="#000"/>
+      <ellipse cx="230" cy="148" rx="18" ry="22" fill="#000"/>
+      <circle cx="175" cy="142" r="6" fill="#fff"/>
+      <circle cx="235" cy="142" r="6" fill="#fff"/>
+      <!-- nose -->
+      <polygon points="200,170 192,180 208,180" fill="#000"/>
+      <!-- mouth -->
+      <path d="M192,180 Q185,192 178,186" fill="none" stroke="#000" stroke-width="3.5"/>
+      <path d="M208,180 Q215,192 222,186" fill="none" stroke="#000" stroke-width="3.5"/>
+      <!-- whiskers -->
+      <line x1="135" y1="172" x2="188" y2="177" stroke="#000" stroke-width="2.5"/>
+      <line x1="130" y1="182" x2="188" y2="182" stroke="#000" stroke-width="2.5"/>
+      <line x1="212" y1="177" x2="265" y2="172" stroke="#000" stroke-width="2.5"/>
+      <line x1="212" y1="182" x2="270" y2="182" stroke="#000" stroke-width="2.5"/>
+    </svg>`
+  },
+  {
+    name: 'Dog',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- body -->
+      <ellipse cx="200" cy="270" rx="115" ry="90" fill="#000"/>
+      <!-- head -->
+      <circle cx="200" cy="155" r="88" fill="#000"/>
+      <!-- ears (floppy) -->
+      <ellipse cx="127" cy="130" rx="30" ry="55" fill="#000" transform="rotate(-15,127,130)"/>
+      <ellipse cx="273" cy="130" rx="30" ry="55" fill="#000" transform="rotate(15,273,130)"/>
+      <!-- face -->
+      <circle cx="200" cy="155" r="70" fill="#fff"/>
+      <!-- snout -->
+      <ellipse cx="200" cy="182" rx="36" ry="26" fill="#000"/>
+      <ellipse cx="200" cy="176" rx="28" ry="16" fill="#fff"/>
+      <!-- nose -->
+      <ellipse cx="200" cy="169" rx="14" ry="10" fill="#000"/>
+      <circle cx="195" cy="166" r="4" fill="#fff"/>
+      <!-- eyes -->
+      <circle cx="168" cy="143" r="19" fill="#000"/>
+      <circle cx="232" cy="143" r="19" fill="#000"/>
+      <circle cx="173" cy="138" r="6" fill="#fff"/>
+      <circle cx="237" cy="138" r="6" fill="#fff"/>
+      <!-- mouth -->
+      <path d="M185,191 Q200,202 215,191" fill="none" stroke="#000" stroke-width="3.5"/>
+      <!-- tail -->
+      <path d="M310,240 Q360,190 355,150" fill="none" stroke="#000" stroke-width="18" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: 'Fish',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- tail fin -->
+      <polygon points="290,200 360,140 360,260" fill="#000"/>
+      <!-- body -->
+      <ellipse cx="190" cy="200" rx="140" ry="85" fill="#000"/>
+      <!-- belly -->
+      <ellipse cx="175" cy="210" rx="95" ry="55" fill="#fff"/>
+      <!-- eye -->
+      <circle cx="90" cy="180" r="28" fill="#fff"/>
+      <circle cx="90" cy="180" r="18" fill="#000"/>
+      <circle cx="84" cy="174" r="6" fill="#fff"/>
+      <!-- mouth -->
+      <path d="M50,200 Q42,210 50,220" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+      <!-- top fin -->
+      <path d="M160,118 Q200,70 240,118" fill="#000"/>
+      <!-- bottom fin -->
+      <path d="M170,285 Q200,320 230,285" fill="#000"/>
+      <!-- scales pattern -->
+      <path d="M130,175 Q145,165 160,175" fill="none" stroke="#fff" stroke-width="3"/>
+      <path d="M160,175 Q175,165 190,175" fill="none" stroke="#fff" stroke-width="3"/>
+      <path d="M145,195 Q160,185 175,195" fill="none" stroke="#fff" stroke-width="3"/>
+      <path d="M175,195 Q190,185 205,195" fill="none" stroke="#fff" stroke-width="3"/>
+    </svg>`
+  },
+  {
+    name: 'Elephant',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- body -->
+      <ellipse cx="210" cy="270" rx="130" ry="100" fill="#000"/>
+      <!-- head -->
+      <circle cx="165" cy="160" r="95" fill="#000"/>
+      <!-- ears -->
+      <ellipse cx="82" cy="168" rx="55" ry="75" fill="#000"/>
+      <ellipse cx="82" cy="168" rx="38" ry="56" fill="#fff"/>
+      <!-- eye -->
+      <circle cx="130" cy="140" r="18" fill="#fff"/>
+      <circle cx="130" cy="140" r="11" fill="#000"/>
+      <circle cx="126" cy="136" r="4" fill="#fff"/>
+      <!-- trunk -->
+      <path d="M118,210 Q80,250 95,300 Q100,320 115,315 Q130,310 125,290 Q112,258 145,225" fill="#000"/>
+      <!-- tusk -->
+      <path d="M125,215 Q90,240 85,265 Q83,278 95,275 Q108,272 110,255 Q120,235 140,225" fill="#fff" stroke="#000" stroke-width="2"/>
+      <!-- legs -->
+      <rect x="130" y="340" width="40" height="50" rx="12" fill="#000"/>
+      <rect x="240" y="340" width="40" height="50" rx="12" fill="#000"/>
+    </svg>`
+  },
+  {
+    name: 'Butterfly',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- upper wings -->
+      <ellipse cx="140" cy="170" rx="110" ry="90" fill="#000" transform="rotate(-20,140,170)"/>
+      <ellipse cx="260" cy="170" rx="110" ry="90" fill="#000" transform="rotate(20,260,170)"/>
+      <!-- wing patterns upper -->
+      <ellipse cx="140" cy="168" rx="75" ry="60" fill="#fff" transform="rotate(-20,140,168)"/>
+      <ellipse cx="260" cy="168" rx="75" ry="60" fill="#fff" transform="rotate(20,260,168)"/>
+      <circle cx="145" cy="158" r="25" fill="#000"/>
+      <circle cx="255" cy="158" r="25" fill="#000"/>
+      <!-- lower wings -->
+      <ellipse cx="145" cy="270" rx="85" ry="70" fill="#000" transform="rotate(15,145,270)"/>
+      <ellipse cx="255" cy="270" rx="85" ry="70" fill="#000" transform="rotate(-15,255,270)"/>
+      <ellipse cx="145" cy="270" rx="58" ry="48" fill="#fff" transform="rotate(15,145,270)"/>
+      <ellipse cx="255" cy="270" rx="58" ry="48" fill="#fff" transform="rotate(-15,255,270)"/>
+      <!-- body -->
+      <ellipse cx="200" cy="210" rx="12" ry="80" fill="#000"/>
+      <!-- antennae -->
+      <path d="M194,140 Q175,95 165,75" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="163" cy="73" r="7" fill="#000"/>
+      <path d="M206,140 Q225,95 235,75" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="237" cy="73" r="7" fill="#000"/>
+    </svg>`
+  },
+  {
+    name: 'Flower',
+    render: () => {
+      const petals = Array.from({length:8}, (_,i) => {
+        const a = (i * 45) * Math.PI / 180;
+        const cx = 200 + 80*Math.cos(a), cy = 200 + 80*Math.sin(a);
+        return `<ellipse cx="${cx}" cy="${cy}" rx="35" ry="50" fill="${i%2===0?'#000':'#333'}" transform="rotate(${i*45},${cx},${cy})"/>`;
+      }).join('');
+      return `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <rect width="400" height="400" fill="#fff"/>
+        ${petals}
+        <circle cx="200" cy="200" r="55" fill="#000"/>
+        <circle cx="200" cy="200" r="35" fill="#fff"/>
+        <circle cx="200" cy="200" r="18" fill="#000"/>
+        <!-- stem -->
+        <line x1="200" y1="345" x2="200" y2="260" stroke="#000" stroke-width="12" stroke-linecap="round"/>
+        <!-- leaf -->
+        <ellipse cx="175" cy="320" rx="28" ry="14" fill="#000" transform="rotate(-35,175,320)"/>
+      </svg>`;
+    }
+  },
+  {
+    name: 'Heart',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <path d="M200,320 C200,320 60,235 60,150 C60,105 95,75 140,75 C165,75 185,88 200,105 C215,88 235,75 260,75 C305,75 340,105 340,150 C340,235 200,320 200,320 Z" fill="#000"/>
+      <!-- inner heart highlight -->
+      <path d="M200,290 C200,290 95,220 95,155 C95,128 112,108 135,108 C152,108 167,118 200,148 C233,118 248,108 265,108 C288,108 305,128 305,155 C305,220 200,290 200,290 Z" fill="#fff"/>
+      <path d="M200,270 C200,270 115,210 115,158 C115,138 128,120 148,120 C162,120 175,130 200,155 C225,130 238,120 252,120 C272,120 285,138 285,158 C285,210 200,270 200,270 Z" fill="#000"/>
+    </svg>`
+  },
+  {
+    name: 'Bird',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- body -->
+      <ellipse cx="195" cy="230" rx="100" ry="75" fill="#000"/>
+      <!-- head -->
+      <circle cx="130" cy="160" r="65" fill="#000"/>
+      <!-- wing -->
+      <path d="M170,215 Q250,165 320,190 Q270,230 220,245 Z" fill="#000"/>
+      <path d="M175,215 Q245,170 308,193 Q262,225 222,240 Z" fill="#fff"/>
+      <!-- tail -->
+      <path d="M285,245 L340,290 L320,300 L310,260 L300,305 L285,255 Z" fill="#000"/>
+      <!-- eye -->
+      <circle cx="118" cy="152" r="18" fill="#fff"/>
+      <circle cx="118" cy="152" r="11" fill="#000"/>
+      <circle cx="114" cy="148" r="4" fill="#fff"/>
+      <!-- beak -->
+      <polygon points="78,168 52,178 78,188" fill="#000"/>
+      <polygon points="78,168 55,178 78,183" fill="#fff"/>
+      <!-- feet -->
+      <line x1="175" y1="300" x2="165" y2="340" stroke="#000" stroke-width="6"/>
+      <line x1="165" y1="340" x2="148" y2="355" stroke="#000" stroke-width="5"/>
+      <line x1="165" y1="340" x2="168" y2="360" stroke="#000" stroke-width="5"/>
+      <line x1="165" y1="340" x2="182" y2="358" stroke="#000" stroke-width="5"/>
+      <line x1="215" y1="300" x2="225" y2="340" stroke="#000" stroke-width="6"/>
+      <line x1="225" y1="340" x2="208" y2="355" stroke="#000" stroke-width="5"/>
+      <line x1="225" y1="340" x2="228" y2="360" stroke="#000" stroke-width="5"/>
+      <line x1="225" y1="340" x2="242" y2="358" stroke="#000" stroke-width="5"/>
+    </svg>`
+  },
+  {
+    name: 'Bear',
+    render: () => `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="400" fill="#fff"/>
+      <!-- body -->
+      <ellipse cx="200" cy="275" rx="120" ry="105" fill="#000"/>
+      <!-- belly -->
+      <ellipse cx="200" cy="285" rx="72" ry="68" fill="#fff"/>
+      <!-- head -->
+      <circle cx="200" cy="155" r="90" fill="#000"/>
+      <!-- ears -->
+      <circle cx="128" cy="82" r="38" fill="#000"/>
+      <circle cx="272" cy="82" r="38" fill="#000"/>
+      <circle cx="128" cy="82" r="22" fill="#fff"/>
+      <circle cx="272" cy="82" r="22" fill="#fff"/>
+      <!-- muzzle -->
+      <ellipse cx="200" cy="185" rx="45" ry="35" fill="#fff"/>
+      <!-- nose -->
+      <ellipse cx="200" cy="172" rx="18" ry="12" fill="#000"/>
+      <!-- eyes -->
+      <circle cx="170" cy="143" r="18" fill="#fff"/>
+      <circle cx="230" cy="143" r="18" fill="#fff"/>
+      <circle cx="170" cy="143" r="11" fill="#000"/>
+      <circle cx="230" cy="143" r="11" fill="#000"/>
+      <circle cx="166" cy="139" r="4" fill="#fff"/>
+      <circle cx="226" cy="139" r="4" fill="#fff"/>
+      <!-- mouth -->
+      <path d="M188,193 Q200,205 212,193" fill="none" stroke="#000" stroke-width="3.5"/>
+      <line x1="200" y1="184" x2="200" y2="193" stroke="#000" stroke-width="3.5"/>
+    </svg>`
   }
 ];
 

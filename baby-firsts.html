@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby Firsts · Baby & Me</title>
+<style>
+  :root {
+    --pp: #FF7B54; --pl: #FFE8DF; --bg: #FFF9F5; --text: #3D3D3D;
+    --muted: #999; --white: #fff; --shadow: 0 4px 24px rgba(0,0,0,0.09); --radius: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: var(--white); box-shadow: 0 1px 8px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 20; }
+  .back { text-decoration: none; color: var(--pp); font-size: 1.4rem; }
+  .topbar h2 { font-size: 1rem; font-weight: 700; }
+  .collage-btn { background: var(--pp); color: white; border: none; border-radius: 20px; padding: 8px 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .collage-btn:active { transform: scale(0.96); }
+
+  .wrap { max-width: 560px; margin: 0 auto; padding: 20px; }
+  .intro { text-align: center; margin-bottom: 24px; }
+  .intro p { font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .first-card {
+    background: var(--white); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow); cursor: pointer; transition: transform 0.15s;
+    position: relative; aspect-ratio: 1;
+  }
+  .first-card:active { transform: scale(0.97); }
+  .first-card.captured { border: 3px solid var(--pp); }
+
+  .card-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card-placeholder {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(145deg, #fff5f0, #ffe8df);
+  }
+  .card-placeholder .big-emoji { font-size: 2.8rem; }
+  .card-placeholder .ph-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+  .card-placeholder .add-hint { font-size: 0.65rem; color: #ccc; }
+
+  .card-banner {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.75));
+    color: white; text-align: center; padding: 18px 8px 10px;
+    font-size: 0.75rem; font-weight: 800; letter-spacing: 0.3px;
+  }
+  .card-banner .banner-emoji { font-size: 1rem; display: block; margin-bottom: 2px; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 100; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 24px; width: 100%; max-width: 400px;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from{ transform:translateY(30px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+
+  .modal-preview {
+    position: relative; width: 100%; aspect-ratio: 1; background: #f5ede6;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .modal-preview .preview-placeholder { font-size: 5rem; }
+  .modal-banner-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: white; text-align: center; padding: 24px 12px 14px;
+  }
+  .modal-banner-overlay .mbo-emoji { font-size: 2rem; display: block; }
+  .modal-banner-overlay .mbo-label { font-size: 1rem; font-weight: 800; margin-top: 4px; display: block; }
+  .modal-banner-overlay .mbo-date { font-size: 0.72rem; opacity: 0.8; margin-top: 2px; display: block; }
+
+  .modal-body { padding: 20px; }
+  .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+  .modal-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 18px; }
+
+  .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .act-btn {
+    padding: 12px 8px; border-radius: 14px; border: 2px solid #e8e0d8;
+    background: var(--bg); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    font-family: inherit; color: var(--text); transition: all 0.15s; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .act-btn:active { transform: scale(0.97); }
+  .act-btn:disabled { opacity: 0.4; pointer-events: none; }
+  .act-btn.primary { background: var(--pp); border-color: var(--pp); color: white; }
+  .act-btn.success { background: #4CAF50; border-color: #4CAF50; color: white; }
+  .act-btn.danger { border-color: #ffcdd2; color: #e53935; }
+
+  .modal-footer { display: flex; gap: 10px; }
+  .modal-footer .act-btn { flex: 1; }
+
+  /* share / download row shown when photo saved */
+  .photo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+  /* Collage Modal */
+  .collage-modal {
+    background: var(--white); border-radius: 24px; width: 100%; max-width: 480px;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.25s ease; max-height: 90vh; display: flex; flex-direction: column;
+  }
+  .collage-header { padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0e8e0; }
+  .collage-header h3 { font-size: 1rem; font-weight: 800; }
+  .close-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--muted); }
+  .collage-scroll { overflow-y: auto; flex: 1; }
+  #collage-canvas { width: 100%; display: block; }
+  .collage-dl-row { padding: 14px 20px; display: flex; gap: 10px; flex-shrink: 0; border-top: 1px solid #f0e8e0; }
+  .collage-dl-row .act-btn { flex: 1; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #333; color: white; padding: 10px 20px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 600; opacity: 0; pointer-events: none;
+    transition: all 0.25s; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  #file-input { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back">←</a>
+  <h2>📸 Baby Firsts</h2>
+  <button class="collage-btn" onclick="openCollage()">🖼️ Collage</button>
+</div>
+
+<div class="wrap">
+  <div class="intro">
+    <p>Capture every magical first moment. Tap any milestone to add a photo!</p>
+  </div>
+  <div class="grid" id="firsts-grid"></div>
+</div>
+
+<!-- Milestone Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-preview" id="modal-preview">
+      <div class="preview-placeholder" id="preview-placeholder">📷</div>
+      <img id="preview-img" style="display:none" alt="milestone photo"/>
+      <div class="modal-banner-overlay">
+        <span class="mbo-emoji" id="mbo-emoji"></span>
+        <span class="mbo-label" id="mbo-label"></span>
+        <span class="mbo-date" id="mbo-date"></span>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-sub" id="modal-sub">Add a photo to remember this moment forever</div>
+
+      <!-- shown when no photo / replacing photo -->
+      <div class="modal-actions" id="upload-actions">
+        <button class="act-btn" onclick="triggerCamera()">📷 Take Photo</button>
+        <button class="act-btn" onclick="triggerUpload()">🖼️ Upload</button>
+      </div>
+
+      <!-- shown when photo is saved -->
+      <div class="photo-actions" id="photo-actions" style="display:none">
+        <button class="act-btn success" onclick="downloadPhoto()">⬇️ Download</button>
+        <button class="act-btn primary" onclick="sharePhoto()">📤 Share</button>
+      </div>
+
+      <div class="modal-footer">
+        <button class="act-btn primary" id="save-btn" onclick="saveMilestone()" disabled>💾 Save</button>
+        <button class="act-btn danger" id="delete-btn" onclick="deleteMilestone()" style="display:none">🗑️ Delete</button>
+        <button class="act-btn" onclick="closeModalDirect()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Collage Modal -->
+<div class="modal-overlay" id="collage-overlay" onclick="closeCollage(event)">
+  <div class="collage-modal">
+    <div class="collage-header">
+      <h3>✨ Our Baby Firsts</h3>
+      <button class="close-btn" onclick="closeCollageDirectly()">✕</button>
+    </div>
+    <div class="collage-scroll">
+      <canvas id="collage-canvas"></canvas>
+    </div>
+    <div class="collage-dl-row">
+      <button class="act-btn success" onclick="downloadCollage()">⬇️ Download</button>
+      <button class="act-btn primary" onclick="shareCollage()">📤 Share</button>
+      <button class="act-btn" onclick="closeCollageDirectly()">✕</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)">
+
+<script>
+const FIRSTS = [
+  { id:'smile',     emoji:'😊', label:'First Smile' },
+  { id:'laugh',     emoji:'😂', label:'First Laugh' },
+  { id:'steps',     emoji:'👣', label:'First Steps' },
+  { id:'word',      emoji:'💬', label:'First Word' },
+  { id:'tooth',     emoji:'🦷', label:'First Tooth' },
+  { id:'food',      emoji:'🥣', label:'First Food' },
+  { id:'crawl',     emoji:'🐛', label:'First Crawl' },
+  { id:'sit',       emoji:'🧘', label:'First Sit' },
+  { id:'wave',      emoji:'👋', label:'First Wave' },
+  { id:'clap',      emoji:'👏', label:'First Clap' },
+  { id:'birthday',  emoji:'🎂', label:'1st Birthday' },
+  { id:'bath',      emoji:'🛁', label:'First Bath' },
+  { id:'haircut',   emoji:'✂️', label:'First Haircut' },
+  { id:'swim',      emoji:'🏊', label:'First Swim' },
+  { id:'playdate',  emoji:'🤝', label:'First Playdate' },
+  { id:'trip',      emoji:'✈️', label:'First Trip' },
+  { id:'book',      emoji:'📚', label:'First Book' },
+  { id:'song',      emoji:'🎵', label:'First Song' },
+  { id:'drawing',   emoji:'🎨', label:'First Drawing' },
+  { id:'friend',    emoji:'🧒', label:'First Friend' },
+];
+
+const STORAGE_KEY = 'baby_firsts_v1';
+let saved = {};
+let currentId = null;
+let pendingDataUrl = null;
+
+function load() {
+  try { const s = localStorage.getItem(STORAGE_KEY); if (s) saved = JSON.parse(s); } catch(e){}
+}
+
+function persistSave() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch(e) {
+    showToast('Storage full — try removing some photos first.');
+  }
+}
+
+function showToast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function renderGrid() {
+  const grid = document.getElementById('firsts-grid');
+  grid.innerHTML = '';
+  FIRSTS.forEach(f => {
+    const card = document.createElement('div');
+    const entry = saved[f.id];
+    card.className = 'first-card' + (entry ? ' captured' : '');
+    if (entry && entry.photo) {
+      card.innerHTML = `
+        <img class="card-photo" src="${entry.photo}" alt="${f.label}"/>
+        <div class="card-banner">
+          <span class="banner-emoji">${f.emoji}</span>
+          ${f.label}${entry.date ? '<br><span style="font-weight:400;font-size:0.65rem;opacity:0.85">' + entry.date + '</span>' : ''}
+        </div>`;
+    } else {
+      card.innerHTML = `
+        <div class="card-placeholder">
+          <span class="big-emoji">${f.emoji}</span>
+          <span class="ph-label">${f.label}</span>
+          <span class="add-hint">+ Add photo</span>
+        </div>`;
+    }
+    card.onclick = () => openModal(f.id);
+    grid.appendChild(card);
+  });
+}
+
+function openModal(id) {
+  currentId = id;
+  pendingDataUrl = null;
+  const f = FIRSTS.find(x => x.id === id);
+  const entry = saved[id];
+
+  document.getElementById('modal-title').textContent = f.emoji + ' ' + f.label;
+  document.getElementById('mbo-emoji').textContent = f.emoji;
+  document.getElementById('mbo-label').textContent = f.label;
+
+  if (entry && entry.photo) {
+    showPreviewImage(entry.photo);
+    document.getElementById('mbo-date').textContent = entry.date || '';
+    document.getElementById('modal-sub').textContent = 'This moment is saved ❤️';
+    document.getElementById('delete-btn').style.display = 'block';
+    document.getElementById('save-btn').disabled = true;
+    document.getElementById('upload-actions').style.display = 'grid';
+    document.getElementById('photo-actions').style.display = 'grid';
+  } else {
+    clearPreview();
+    document.getElementById('mbo-date').textContent = '';
+    document.getElementById('modal-sub').textContent = 'Add a photo to remember this moment forever';
+    document.getElementById('delete-btn').style.display = 'none';
+    document.getElementById('save-btn').disabled = true;
+    document.getElementById('upload-actions').style.display = 'grid';
+    document.getElementById('photo-actions').style.display = 'none';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentId = null; pendingDataUrl = null;
+}
+
+function showPreviewImage(src) {
+  const img = document.getElementById('preview-img');
+  img.src = src;
+  img.style.display = 'block';
+  document.getElementById('preview-placeholder').style.display = 'none';
+}
+
+function clearPreview() {
+  document.getElementById('preview-img').style.display = 'none';
+  document.getElementById('preview-img').src = '';
+  document.getElementById('preview-placeholder').style.display = 'block';
+}
+
+function triggerCamera() {
+  const input = document.getElementById('file-input');
+  input.setAttribute('capture', 'environment');
+  input.click();
+}
+
+function triggerUpload() {
+  const input = document.getElementById('file-input');
+  input.removeAttribute('capture');
+  input.click();
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    compressImage(ev.target.result, compressed => {
+      pendingDataUrl = compressed;
+      showPreviewImage(compressed);
+      const today = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+      document.getElementById('mbo-date').textContent = today;
+      document.getElementById('save-btn').disabled = false;
+      document.getElementById('photo-actions').style.display = 'none'; // hide until saved
+      document.getElementById('modal-sub').textContent = 'Looks perfect! Tap Save to keep it.';
+    });
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function compressImage(dataUrl, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const MAX = 800;
+    let w = img.width, h = img.height;
+    if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+    else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    cb(c.toDataURL('image/jpeg', 0.78));
+  };
+  img.src = dataUrl;
+}
+
+function saveMilestone() {
+  if (!currentId || !pendingDataUrl) return;
+  const today = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  saved[currentId] = { photo: pendingDataUrl, date: today };
+  persistSave();
+  renderGrid();
+  closeModalDirect();
+  showToast('✨ Saved!');
+}
+
+function deleteMilestone() {
+  if (!currentId) return;
+  if (!confirm('Remove this photo?')) return;
+  delete saved[currentId];
+  persistSave();
+  renderGrid();
+  closeModalDirect();
+}
+
+// --- Render a single milestone card onto an offscreen canvas with banner baked in ---
+function renderMilestoneCanvas(id, cb) {
+  const f = FIRSTS.find(x => x.id === id);
+  const entry = saved[id];
+  if (!entry || !entry.photo) return;
+
+  const SIZE = 800;
+  const c = document.createElement('canvas');
+  c.width = SIZE; c.height = SIZE;
+  const ctx = c.getContext('2d');
+
+  const img = new Image();
+  img.onload = () => {
+    // draw photo cropped to square
+    const scale = Math.max(SIZE / img.width, SIZE / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    ctx.drawImage(img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
+
+    // gradient overlay
+    const grad = ctx.createLinearGradient(0, SIZE * 0.45, 0, SIZE);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.82)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // emoji
+    ctx.font = '90px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(f.emoji, SIZE / 2, SIZE - 110);
+
+    // label
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 52px -apple-system, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(f.label, SIZE / 2, SIZE - 44);
+
+    // date
+    if (entry.date) {
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.font = '32px -apple-system, Arial, sans-serif';
+      ctx.fillText(entry.date, SIZE / 2, SIZE - 12);
+    }
+
+    // watermark
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '22px -apple-system, Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('Baby & Me', SIZE - 16, 36);
+
+    cb(c);
+  };
+  img.src = entry.photo;
+}
+
+function downloadPhoto() {
+  if (!currentId || !saved[currentId]) return;
+  const f = FIRSTS.find(x => x.id === currentId);
+  renderMilestoneCanvas(currentId, c => {
+    const link = document.createElement('a');
+    link.download = `baby-first-${f.id}.jpg`;
+    link.href = c.toDataURL('image/jpeg', 0.92);
+    link.click();
+    showToast('⬇️ Saved to downloads!');
+  });
+}
+
+async function sharePhoto() {
+  if (!currentId || !saved[currentId]) return;
+  const f = FIRSTS.find(x => x.id === currentId);
+  renderMilestoneCanvas(currentId, async c => {
+    const dataUrl = c.toDataURL('image/jpeg', 0.92);
+    const filename = `baby-first-${f.id}.jpg`;
+    await shareOrDownload(dataUrl, filename, `${f.emoji} ${f.label}`, `A precious milestone! ❤️`);
+  });
+}
+
+// --- Collage ---
+function openCollage() {
+  const entries = FIRSTS.filter(f => saved[f.id] && saved[f.id].photo);
+  if (entries.length === 0) {
+    showToast('Add some photos first! 📸');
+    return;
+  }
+  document.getElementById('collage-overlay').classList.add('open');
+  renderCollage(entries);
+}
+
+function closeCollage(e) {
+  if (e.target === document.getElementById('collage-overlay')) closeCollageDirectly();
+}
+function closeCollageDirectly() {
+  document.getElementById('collage-overlay').classList.remove('open');
+}
+
+function renderCollage(entries) {
+  const canvas = document.getElementById('collage-canvas');
+  const cols = entries.length <= 2 ? entries.length : entries.length <= 4 ? 2 : entries.length <= 9 ? 3 : 4;
+  const rows = Math.ceil(entries.length / cols);
+  const cellSize = 200;
+  const padding = 6;
+  const headerH = 64;
+  canvas.width = cols * cellSize + (cols + 1) * padding;
+  canvas.height = rows * cellSize + (rows + 1) * padding + headerH;
+
+  const maxW = Math.min(window.innerWidth - 40, 480);
+  canvas.style.width = maxW + 'px';
+  canvas.style.height = 'auto';
+
+  const ctx = canvas.getContext('2d');
+
+  // background
+  const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  bg.addColorStop(0, '#fff9f5');
+  bg.addColorStop(1, '#ffe8df');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // header bar
+  ctx.fillStyle = '#FF7B54';
+  ctx.fillRect(0, 0, canvas.width, headerH);
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 20px -apple-system, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✨ Our Baby Firsts', canvas.width / 2, headerH / 2);
+
+  let loaded = 0;
+  entries.forEach((f, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = padding + col * (cellSize + padding);
+    const y = headerH + padding + row * (cellSize + padding);
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      roundRect(ctx, x, y, cellSize, cellSize, 10);
+      ctx.clip();
+      const scale = Math.max(cellSize / img.width, cellSize / img.height);
+      const dw = img.width * scale, dh = img.height * scale;
+      ctx.drawImage(img, x + (cellSize - dw) / 2, y + (cellSize - dh) / 2, dw, dh);
+
+      const grad = ctx.createLinearGradient(x, y + cellSize * 0.5, x, y + cellSize);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.76)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, cellSize, cellSize);
+      ctx.restore();
+
+      ctx.font = '26px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(f.emoji, x + cellSize / 2, y + cellSize - 34);
+
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 13px -apple-system, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(f.label, x + cellSize / 2, y + cellSize - 12);
+
+      loaded++;
+    };
+    img.onerror = () => { loaded++; };
+    img.src = saved[f.id].photo;
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function getCollageDataUrl() {
+  return new Promise(resolve => {
+    // wait a tick to ensure canvas images are rendered
+    setTimeout(() => {
+      const canvas = document.getElementById('collage-canvas');
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    }, 350);
+  });
+}
+
+async function downloadCollage() {
+  const dataUrl = await getCollageDataUrl();
+  const link = document.createElement('a');
+  link.download = 'baby-firsts-collage.jpg';
+  link.href = dataUrl;
+  link.click();
+  showToast('⬇️ Collage saved!');
+}
+
+async function shareCollage() {
+  const dataUrl = await getCollageDataUrl();
+  await shareOrDownload(dataUrl, 'baby-firsts-collage.jpg', '✨ Our Baby Firsts', 'Every precious first moment ❤️');
+}
+
+// --- Shared helper: try Web Share API v2, fall back to download ---
+async function shareOrDownload(dataUrl, filename, title, text) {
+  // convert dataUrl → Blob → File for Web Share API
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title, text });
+      return;
+    }
+  } catch(e) {
+    // share cancelled or failed — fall through to download
+    if (e.name === 'AbortError') return; // user cancelled, don't download
+  }
+
+  // fallback: direct download
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = dataUrl;
+  link.click();
+  showToast('⬇️ Saved to downloads!');
+}
+
+load();
+renderGrid();
+</script>
+</body>
+</html>

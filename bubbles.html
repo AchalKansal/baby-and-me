@@ -29,17 +29,19 @@
   <div style="width:44px"></div>
 </div>
 <canvas id="canvas"></canvas>
-<p class="hint">Tap anywhere to pop!</p>
+<p class="hint">Tap to pop!</p>
 <div class="controls">
   <button class="ctrl-btn active" onclick="setMode('float',this)">🌙 Float</button>
   <button class="ctrl-btn" onclick="setMode('burst',this)">✨ Burst</button>
   <button class="ctrl-btn" onclick="setMode('rain',this)">🌧️ Rain</button>
+  <button class="ctrl-btn" onclick="setMode('balloon',this)">🎈 Balloon</button>
 </div>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-let W, H, bubbles = [], mode = 'float', animId;
+let W, H, bubbles = [], fallingAnimals = [], mode = 'float', animId;
+let audioCtx = null;
 
 const COLORS = [
   'rgba(255,182,193,0.55)', 'rgba(173,216,230,0.55)', 'rgba(144,238,144,0.55)',
@@ -47,7 +49,96 @@ const COLORS = [
   'rgba(255,255,150,0.45)', 'rgba(200,230,255,0.5)'
 ];
 
+const BALLOON_COLORS = [
+  '#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#FF9FF3',
+  '#54A0FF', '#5F27CD', '#00D2D3', '#ff6b81', '#7bed9f'
+];
+
+const CUTE_ANIMALS = ['🐱','🐶','🐰','🐼','🦊','🐸','🦋','🐥','🦁','🐻','🐨','🐮','🐷','🐙','🦄','🐬'];
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playBubblePop() {
+  try {
+    ensureAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    const t = audioCtx.currentTime;
+    osc.frequency.setValueAtTime(900, t);
+    osc.frequency.exponentialRampToValueAtTime(150, t + 0.08);
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    osc.start(t); osc.stop(t + 0.13);
+  } catch(e){}
+}
+
+function playBalloonPop() {
+  try {
+    ensureAudio();
+    // noise burst for a "bang"
+    const bufSize = audioCtx.sampleRate * 0.15;
+    const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 2);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 400;
+    src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+    const t = audioCtx.currentTime;
+    gain.gain.setValueAtTime(1.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    src.start(t); src.stop(t + 0.15);
+  } catch(e){}
+}
+
 function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+class FallingAnimal {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.emoji = CUTE_ANIMALS[Math.floor(Math.random() * CUTE_ANIMALS.length)];
+    this.vy = -4 - Math.random() * 3;
+    this.vx = (Math.random() - 0.5) * 5;
+    this.gravity = 0.35;
+    this.rotation = 0;
+    this.rotSpeed = (Math.random() - 0.5) * 0.15;
+    this.alpha = 1;
+    this.size = 44 + Math.random() * 20;
+    this.scale = 1;
+    this.scaleDir = 1;
+  }
+  update() {
+    this.vy += this.gravity;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.rotation += this.rotSpeed;
+    this.scale += this.scaleDir * 0.02;
+    if (this.scale > 1.2 || this.scale < 0.8) this.scaleDir *= -1;
+    if (this.y > H + 80) this.alpha = 0;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, this.alpha);
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.scale(this.scale, this.scale);
+    ctx.font = `${this.size}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.emoji, 0, 0);
+    ctx.restore();
+  }
+  get dead() { return this.alpha <= 0; }
+}
 
 class Bubble {
   constructor(x, y, r) {
@@ -60,6 +151,7 @@ class Bubble {
     this.wobbleSpeed = 0.015 + Math.random() * 0.02;
     this.opacity = 0; this.fadingIn = true;
     this.popping = false; this.popR = 0; this.popAlpha = 1;
+    this.isBalloon = false;
   }
   update() {
     if (this.popping) { this.popR += 3; this.popAlpha -= 0.07; return; }
@@ -84,69 +176,162 @@ class Bubble {
     ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
     ctx.fillStyle = grad; ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
-    // shine
     ctx.beginPath(); ctx.arc(this.x - this.r*0.3, this.y - this.r*0.35, this.r*0.2, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
     ctx.restore();
   }
-  pop() { this.popping = true; }
+  pop() {
+    this.popping = true;
+    playBubblePop();
+  }
   get dead() { return this.popping && this.popAlpha <= 0; }
 }
 
+class Balloon {
+  constructor(x, y) {
+    this.x = x ?? Math.random() * W;
+    this.y = y ?? H + 80;
+    this.rw = 22 + Math.random() * 30;
+    this.rh = this.rw * 1.25;
+    this.color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
+    this.speed = 0.6 + Math.random() * 0.8;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = 0.01 + Math.random() * 0.015;
+    this.opacity = 0; this.fadingIn = true;
+    this.popping = false; this.popR = 0; this.popAlpha = 1;
+    this.stringWiggle = 0;
+    this.isBalloon = true;
+  }
+  update() {
+    if (this.popping) { this.popR += 4; this.popAlpha -= 0.08; return; }
+    this.y -= this.speed;
+    this.x += Math.sin(this.wobble) * 0.8;
+    this.wobble += this.wobbleSpeed;
+    this.stringWiggle += 0.05;
+    if (this.fadingIn) { this.opacity = Math.min(1, this.opacity + 0.025); if (this.opacity >= 1) this.fadingIn = false; }
+    if (this.y < -this.rh * 2) { this.y = H + this.rh; this.x = Math.random() * W; }
+  }
+  draw() {
+    if (this.popping) {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const len = this.popR;
+        ctx.beginPath();
+        ctx.moveTo(this.x + Math.cos(a) * 10, this.y + Math.sin(a) * 10);
+        ctx.lineTo(this.x + Math.cos(a) * len, this.y + Math.sin(a) * len);
+        ctx.strokeStyle = `${this.color}${Math.floor(this.popAlpha * 200).toString(16).padStart(2,'0')}`;
+        ctx.lineWidth = 3; ctx.stroke();
+      }
+      return;
+    }
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+
+    // balloon body (oval)
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y, this.rw, this.rh, 0, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+
+    // highlight
+    ctx.beginPath();
+    ctx.ellipse(this.x - this.rw * 0.3, this.y - this.rh * 0.3, this.rw * 0.25, this.rh * 0.2, -0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fill();
+
+    // knot at bottom
+    ctx.beginPath();
+    ctx.arc(this.x, this.y + this.rh, 4, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+
+    // string
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y + this.rh + 4);
+    ctx.bezierCurveTo(
+      this.x + Math.sin(this.stringWiggle) * 8, this.y + this.rh + 20,
+      this.x - Math.sin(this.stringWiggle) * 8, this.y + this.rh + 40,
+      this.x + Math.sin(this.stringWiggle * 0.7) * 5, this.y + this.rh + 55
+    );
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+  pop() {
+    this.popping = true;
+    playBalloonPop();
+    fallingAnimals.push(new FallingAnimal(this.x, this.y));
+  }
+  get dead() { return this.popping && this.popAlpha <= 0; }
+  get r() { return Math.max(this.rw, this.rh); }
+}
+
 function spawnBubbles(n) {
-  const start = mode === 'rain' ? 0 : H;
   for (let i = 0; i < n; i++) {
-    const b = new Bubble(Math.random()*W, mode==='rain' ? Math.random()*H : start + Math.random()*200);
+    const b = mode === 'balloon' ? new Balloon(Math.random()*W, H + Math.random()*200) : new Bubble(Math.random()*W, mode==='rain' ? Math.random()*H : H + Math.random()*200);
     b.opacity = Math.random(); b.fadingIn = false;
     bubbles.push(b);
   }
 }
 
 function setMode(m, btn) {
-  mode = m; bubbles = [];
+  mode = m; bubbles = []; fallingAnimals = [];
   document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  spawnBubbles(m === 'burst' ? 8 : 18);
+  const count = m === 'burst' ? 8 : m === 'balloon' ? 12 : 18;
+  spawnBubbles(count);
 }
 
 function loop() {
   ctx.clearRect(0, 0, W, H);
   bubbles = bubbles.filter(b => !b.dead);
+  fallingAnimals = fallingAnimals.filter(a => !a.dead);
 
-  if (mode === 'burst' && bubbles.filter(b=>!b.popping).length < 6) {
+  if (mode === 'balloon') {
+    if (bubbles.filter(b => !b.popping).length < 8) {
+      for (let i = 0; i < 3; i++) { bubbles.push(new Balloon(Math.random()*W, H + 40)); }
+    }
+  } else if (mode === 'burst' && bubbles.filter(b=>!b.popping).length < 6) {
     for(let i=0;i<3;i++) { const b=new Bubble(Math.random()*W, H+40); b.r=15+Math.random()*45; bubbles.push(b); }
-  } else if (bubbles.length < 20) {
+  } else if (mode !== 'balloon' && bubbles.length < 20) {
     const b = new Bubble();
     if (mode === 'rain') { b.y = -b.r; }
     bubbles.push(b);
   }
 
   bubbles.forEach(b => { b.update(); b.draw(); });
+  fallingAnimals.forEach(a => { a.update(); a.draw(); });
   animId = requestAnimationFrame(loop);
+}
+
+function handlePop(mx, my) {
+  let popped = false;
+  // check balloons first (on top)
+  for (const b of [...bubbles].reverse()) {
+    if (!b.popping) {
+      const hit = b.isBalloon
+        ? (Math.pow((mx - b.x) / b.rw, 2) + Math.pow((my - b.y) / b.rh, 2) < 1)
+        : (Math.hypot(b.x - mx, b.y - my) < b.r);
+      if (hit) { b.pop(); popped = true; break; }
+    }
+  }
+  if (!popped && mode === 'burst') {
+    for(let i=0;i<5;i++) { const b=new Bubble(mx+(-30+Math.random()*60), my+(-30+Math.random()*60), 15+Math.random()*30); bubbles.push(b); }
+  }
 }
 
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  let popped = false;
-  bubbles.forEach(b => {
-    if (!b.popping && Math.hypot(b.x-mx, b.y-my) < b.r) { b.pop(); popped = true; }
-  });
-  if (!popped && mode === 'burst') {
-    for(let i=0;i<5;i++) { const b=new Bubble(mx+(-30+Math.random()*60), my+(-30+Math.random()*60), 15+Math.random()*30); bubbles.push(b); }
-  }
+  handlePop(e.clientX - rect.left, e.clientY - rect.top);
 });
 
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   Array.from(e.changedTouches).forEach(t => {
-    const rect=canvas.getBoundingClientRect();
-    const mx=t.clientX-rect.left, my=t.clientY-rect.top;
-    let popped = false;
-    bubbles.forEach(b => { if(!b.popping && Math.hypot(b.x-mx,b.y-my)<b.r) { b.pop(); popped = true; } });
-    if (!popped && mode === 'burst') {
-      for(let i=0;i<5;i++) { const b=new Bubble(mx+(-30+Math.random()*60), my+(-30+Math.random()*60), 15+Math.random()*30); bubbles.push(b); }
-    }
+    const rect = canvas.getBoundingClientRect();
+    handlePop(t.clientX - rect.left, t.clientY - rect.top);
   });
 }, {passive:false});
 
