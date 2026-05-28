@@ -95,7 +95,7 @@ async function startCamera() {
 function setFilter(type, btn) {
   const video = document.getElementById('video');
   const filters = { none: '', warm: 'sepia(0.3) saturate(1.5) hue-rotate(-15deg)', cool: 'hue-rotate(30deg) saturate(0.9) brightness(1.05)', bw: 'grayscale(1) contrast(1.1)', dream: 'blur(1px) brightness(1.1) saturate(1.4) contrast(0.9)' };
-  video.style.filter = `scaleX(-1) ${filters[type]}`;
+  video.style.filter = filters[type];
   video.style.transform = 'scaleX(-1)';
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');

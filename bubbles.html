@@ -142,7 +142,11 @@ canvas.addEventListener('touchstart', e => {
   Array.from(e.changedTouches).forEach(t => {
     const rect=canvas.getBoundingClientRect();
     const mx=t.clientX-rect.left, my=t.clientY-rect.top;
-    bubbles.forEach(b => { if(!b.popping && Math.hypot(b.x-mx,b.y-my)<b.r) b.pop(); });
+    let popped = false;
+    bubbles.forEach(b => { if(!b.popping && Math.hypot(b.x-mx,b.y-my)<b.r) { b.pop(); popped = true; } });
+    if (!popped && mode === 'burst') {
+      for(let i=0;i<5;i++) { const b=new Bubble(mx+(-30+Math.random()*60), my+(-30+Math.random()*60), 15+Math.random()*30); bubbles.push(b); }
+    }
   });
 }, {passive:false});
 

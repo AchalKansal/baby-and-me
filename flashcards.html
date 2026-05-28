@@ -165,7 +165,10 @@ function showCard(i) {
   renderDots();
 }
 
-function nextCard() { showCard(current + 1); }
+function nextCard() {
+  showCard(current + 1);
+  if (autoPlay) { clearInterval(autoTimer); autoTimer = setInterval(nextCard, 4000); }
+}
 
 function toggleAuto() {
   autoPlay = !autoPlay;

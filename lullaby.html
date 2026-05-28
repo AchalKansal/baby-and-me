@@ -124,10 +124,15 @@ const SONGS = [
 
 let ctx = null, gainNode = null;
 let playing = false, stopped = false, currentSong = null, tempo = 0.7;
-let scheduleTimeout = null;
+let scheduleTimeout = null, activeOscs = [];
 
 function ensureCtx() {
   if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); gainNode = ctx.createGain(); gainNode.connect(ctx.destination); gainNode.gain.value = 0.55; }
+}
+
+function stopAllOscs() {
+  activeOscs.forEach(o => { try { o.stop(); } catch(e){} });
+  activeOscs = [];
 }
 
 function playNote(freq, dur, startTime) {
@@ -143,6 +148,8 @@ function playNote(freq, dur, startTime) {
   env.gain.setValueAtTime(0.8, startTime + noteDur * 0.7);
   env.gain.linearRampToValueAtTime(0, startTime + noteDur);
   osc.start(startTime); osc.stop(startTime + noteDur + 0.01);
+  activeOscs.push(osc);
+  osc.onended = () => { activeOscs = activeOscs.filter(o2 => o2 !== osc); };
 }
 
 function playLoop() {
@@ -169,6 +176,7 @@ function togglePlay() {
 
 function selectSong(i) {
   clearTimeout(scheduleTimeout);
+  stopAllOscs();
   currentSong = i;
   document.querySelectorAll('.song-btn').forEach((b,j) => b.classList.toggle('active', j===i));
   document.getElementById('song-name').textContent = SONGS[i].name;
