@@ -46,7 +46,7 @@
 </head>
 <body>
 <div class="topbar">
-  <a href="index.html" class="back">←</a>
+  <a href="index.html" class="back" onclick="history.back();return false;">←</a>
   <h2>🪞 Baby Mirror</h2>
   <div style="width:44px"></div>
 </div>
@@ -80,7 +80,7 @@
 <script>
 let audioCtx = null;
 
-function ensureAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function ensureAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
 async function startCamera() {
   document.getElementById('no-cam').style.display = 'none';

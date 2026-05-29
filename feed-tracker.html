@@ -84,7 +84,7 @@
 </div>
 
 <div class="topbar">
-  <a href="index.html" class="back">←</a>
+  <a href="index.html" class="back" onclick="history.back();return false;">←</a>
   <h2>🍼 Feed Tracker</h2>
 </div>
 
@@ -247,6 +247,7 @@ function showAlarmBanner() {
   }
   try {
     const ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
     for (let i = 0; i < 3; i++) {
       const osc = ac.createOscillator(), g = ac.createGain();
       osc.connect(g); g.connect(ac.destination);

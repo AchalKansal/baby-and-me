@@ -43,7 +43,7 @@
 </head>
 <body>
 <div class="topbar">
-  <a href="index.html" class="back">←</a>
+  <a href="index.html" class="back" onclick="history.back();return false;">←</a>
   <h2>👀 Peek-a-Boo</h2>
   <div style="width:44px"></div>
 </div>
@@ -114,7 +114,7 @@
 // Phases: 0=intro, 1=peek(curtain peeking), 2=BOO!, 3=hide
 let phase = 0, autoTimer = null, ctx_audio = null;
 
-function ensureAudio() { if (!ctx_audio) ctx_audio = new (window.AudioContext || window.webkitAudioContext)(); }
+function ensureAudio() { if (!ctx_audio) ctx_audio = new (window.AudioContext || window.webkitAudioContext)(); if (ctx_audio.state === 'suspended') ctx_audio.resume(); }
 
 function playPeek() {
   ensureAudio();
